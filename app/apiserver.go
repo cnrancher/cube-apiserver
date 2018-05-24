@@ -1,6 +1,7 @@
 package app
 
 import (
+	"flag"
 	"fmt"
 	"net/http"
 
@@ -20,6 +21,7 @@ const (
 )
 
 func APIServerCmd() cli.Command {
+	flag.Parse()
 	return cli.Command{
 		Name: "serve",
 		Flags: []cli.Flag{

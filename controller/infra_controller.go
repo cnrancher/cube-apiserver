@@ -32,7 +32,7 @@ import (
 )
 
 const controllerAgentName = "infra-controller"
-const infrastructureNamespace = "infra-system"
+const infrastructureNamespace = "kube-system"
 
 const (
 	SuccessSynced         = "Synced"
@@ -239,7 +239,7 @@ func (c *InfraController) syncHandler(key string) error {
 		return err
 	}
 
-	deploymentName := infra.Spec.Name
+	deploymentName := infra.Name
 	if deploymentName == "" {
 		// We choose to absorb the error here as the worker would requeue the
 		// resource otherwise. Instead, the next time the resource is updated
@@ -312,7 +312,9 @@ func (c *InfraController) updateInfra(infra *infrav1alpha1.Infrastructure, deplo
 		infraCopy.Status.State = "Healthy"
 	} else {
 		infraCopy.Status.State = "UnHealthy"
-		infraCopy.Status.Message = serviceErr.Error()
+		if serviceErr != nil {
+			infraCopy.Status.Message = serviceErr.Error()
+		}
 	}
 
 	// Until #38113 is merged, we must use Update instead of UpdateStatus to
