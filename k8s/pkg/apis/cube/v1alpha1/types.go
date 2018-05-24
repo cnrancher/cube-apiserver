@@ -2,6 +2,7 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"reflect"
 )
 
 // +genclient
@@ -17,14 +18,17 @@ type Infrastructure struct {
 }
 
 type InfraSpec struct {
-	Name string `json:"name"`
-	Desc string `json:"desc"`
-	Icon string `json:"icon"`
+	Name      string `json:"name"`
+	Desc      string `json:"desc"`
+	Icon      string `json:"icon"`
+	Replicas  *int32 `json:"replicas"`
+	InfraKind string `json:"infraKind"`
 }
 
 type InfraStatus struct {
-	State   string `json:"state"`
-	Message string `json:"message"`
+	State             string `json:"state"`
+	AvailableReplicas int32  `json:"availableReplicas"`
+	Message           string `json:"message"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
