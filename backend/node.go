@@ -7,11 +7,11 @@ import (
 )
 
 func (c *ClientGenerator) ClusterNodes() (*v1.NodeList, error) {
-	nodeList, err := c.clientset.CoreV1().Nodes().List(util.ListEverything)
+	nodeList, err := c.Clientset.CoreV1().Nodes().List(util.ListEverything)
 	return nodeList, err
 }
 
 func (c *ClientGenerator) ClusterNode(id string) (*v1.Node, error) {
-	node, err := c.clientset.CoreV1().Nodes().Get(id, util.GetOptions)
+	node, err := c.Clientset.CoreV1().Nodes().Get(id, util.GetOptions)
 	return node, err
 }

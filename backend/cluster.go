@@ -17,7 +17,7 @@ type ClusterResource struct {
 }
 
 func (c *ClientGenerator) ClusterResources() (*ClusterResource, error) {
-	nodes, err := c.clientset.CoreV1().Nodes().List(util.ListEverything)
+	nodes, err := c.Clientset.CoreV1().Nodes().List(util.ListEverything)
 	if err != nil {
 		return nil, err
 	}
@@ -92,12 +92,12 @@ func (c *ClientGenerator) ClusterResources() (*ClusterResource, error) {
 }
 
 func (c *ClientGenerator) ClusterComponentStatuses() (*v1.ComponentStatusList, error) {
-	componentStatuses, err := c.clientset.CoreV1().ComponentStatuses().List(util.ListEverything)
+	componentStatuses, err := c.Clientset.CoreV1().ComponentStatuses().List(util.ListEverything)
 	return componentStatuses, err
 }
 
 func (c *ClientGenerator) ClusterComponentStatus(component string) (*v1.ComponentStatus, error) {
-	componentStatus, err := c.clientset.CoreV1().ComponentStatuses().Get(component, util.GetOptions)
+	componentStatus, err := c.Clientset.CoreV1().ComponentStatuses().Get(component, util.GetOptions)
 	return componentStatus, err
 }
 
@@ -110,7 +110,7 @@ func (c *ClientGenerator) getNodePods(node v1.Node) (*v1.PodList, error) {
 		return nil, err
 	}
 
-	pods, err := c.clientset.CoreV1().Pods(v1.NamespaceAll).List(metaV1.ListOptions{
+	pods, err := c.Clientset.CoreV1().Pods(v1.NamespaceAll).List(metaV1.ListOptions{
 		FieldSelector: fieldSelector.String(),
 	})
 

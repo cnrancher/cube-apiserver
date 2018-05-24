@@ -11,10 +11,14 @@ import (
 	infrascheme "github.com/rancher/rancher-cube-apiserver/k8s/pkg/client/clientset/versioned/scheme"
 	infrainformers "github.com/rancher/rancher-cube-apiserver/k8s/pkg/client/informers/externalversions"
 	infralisters "github.com/rancher/rancher-cube-apiserver/k8s/pkg/client/listers/cube/v1alpha1"
+	"github.com/rancher/rancher-cube-apiserver/util"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/informers"
@@ -27,8 +31,10 @@ import (
 	"k8s.io/client-go/util/workqueue"
 )
 
+const controllerAgentName = "infra-controller"
+const infrastructureNamespace = "infra-system"
+
 const (
-	controllerAgentName   = "infra-controller"
 	SuccessSynced         = "Synced"
 	ErrResourceExists     = "ErrResourceExists"
 	MessageResourceExists = "Resource %q already exists and is not managed by Infrastructure"
@@ -136,7 +142,7 @@ func (c *InfraController) Run(threadiness int, stopCh <-chan struct{}) error {
 	}
 
 	glog.Info("Starting workers")
-	// Launch two workers to process Infrastructure resources
+	// Launch four workers to process Infrastructure resources
 	for i := 0; i < threadiness; i++ {
 		go wait.Until(c.runWorker, time.Second, stopCh)
 	}
@@ -247,7 +253,7 @@ func (c *InfraController) syncHandler(key string) error {
 	// If the resource doesn't exist, we'll create it
 	if k8serrors.IsNotFound(err) {
 		//deployment, err = c.clientset.AppsV1().Deployments(infra.Namespace).Create(newDeployment(infra))
-		deployment, err = bundleCreate(infra)
+		deployment, err = c.bundleCreate(infra)
 	}
 
 	// If an error occurs during Get/Create, we'll requeue the item so we can
@@ -271,7 +277,7 @@ func (c *InfraController) syncHandler(key string) error {
 	if infra.Spec.Replicas != nil && *infra.Spec.Replicas != *deployment.Spec.Replicas {
 		glog.V(4).Infof("Infrastructure %s replicas: %d, deployment replicas: %d", name, *infra.Spec.Replicas, *deployment.Spec.Replicas)
 		//deployment, err = c.clientset.AppsV1().Deployments(infra.Namespace).Update(newDeployment(infra))
-		deployment, err = bundleCreate(infra)
+		deployment, err = c.bundleCreate(infra)
 	}
 
 	// If an error occurs during Update, we'll requeue the item so we can
@@ -300,9 +306,9 @@ func (c *InfraController) updateInfra(infra *infrav1alpha1.Infrastructure, deplo
 	infraCopy.Status.AvailableReplicas = deployment.Status.AvailableReplicas
 
 	// Detect Infrastructure Service
-	isHealthy, serviceErr := detectService(infraCopy)
+	isHealthy, serviceErr := c.detectService(infraCopy)
 
-	if isHealthy {
+	if isHealthy && infraCopy.Status.AvailableReplicas > 0 {
 		infraCopy.Status.State = "Healthy"
 	} else {
 		infraCopy.Status.State = "UnHealthy"
@@ -372,30 +378,326 @@ func (c *InfraController) handleObject(obj interface{}) {
 
 // bundleCreate will create all Infrastructure needed such as(Service, Rbac, Pv, Pvc, Deployment, etc...)
 // currently infrastructure types of support include (Dashboard, Longhorn, RancherVM)
-func bundleCreate(infra *infrav1alpha1.Infrastructure) (*appsv1.Deployment, error) {
+func (c *InfraController) bundleCreate(infra *infrav1alpha1.Infrastructure) (*appsv1.Deployment, error) {
 	switch infra.Spec.InfraKind {
 	case "Dashboard":
-		return createDashboard(infra)
+		return c.createDashboard(infra)
 	case "Longhorn":
-		return createLoghorn(infra)
+		return c.createLoghorn(infra)
 	case "RancherVM":
-		return createRancherVM(infra)
+		return c.createRancherVM(infra)
 	}
 	return nil, errors.New("error bundle create: infrastructure type " + infra.Spec.InfraKind + " is invalid")
 }
 
-func createDashboard(infra *infrav1alpha1.Infrastructure) (*appsv1.Deployment, error) {
-	return nil, nil
-}
+// detectService will check the Infrastructure service weather healthy or not.
+func (c *InfraController) detectService(infra *infrav1alpha1.Infrastructure) (bool, error) {
+	serviceName := ""
 
-func createLoghorn(infra *infrav1alpha1.Infrastructure) (*appsv1.Deployment, error) {
-	return nil, nil
-}
+	switch infra.Spec.InfraKind {
+	case "Dashboard":
+		serviceName = "kubernetes-dashboard"
+	case "Longhorn":
+		// TODO: need change to the real name
+		serviceName = "longhorn"
+	case "RancherVM":
+		// TODO: need change to the real name
+		serviceName = "rancher-vm"
+	default:
+		return false, errors.New("error detect service: infrastructure type " + infra.Spec.InfraKind + " is invalid")
+	}
 
-func createRancherVM(infra *infrav1alpha1.Infrastructure) (*appsv1.Deployment, error) {
-	return nil, nil
-}
+	// TODO: need change to serviceInformer
+	_, err := c.clientset.CoreV1().Services(infrastructureNamespace).Get(serviceName, util.GetOptions)
+	if err != nil {
+		return false, err
+	}
 
-func detectService(infra *infrav1alpha1.Infrastructure) (bool, error) {
 	return true, nil
+}
+
+func (c *InfraController) ensureNamespaceExists() error {
+	_, err := c.clientset.CoreV1().Namespaces().Create(&corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: infrastructureNamespace,
+		},
+	})
+	return err
+}
+
+func (c *InfraController) createDashboard(infra *infrav1alpha1.Infrastructure) (*appsv1.Deployment, error) {
+	err := c.ensureNamespaceExists()
+	if err == nil || k8serrors.IsAlreadyExists(err) {
+		// create dashboard secret
+		_, err = c.clientset.CoreV1().Secrets(infrastructureNamespace).Create(&corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "kubernetes-dashboard-certs",
+				Namespace: infrastructureNamespace,
+				Labels: map[string]string{
+					"k8s-app": "kubernetes-dashboard",
+				},
+				OwnerReferences: []metav1.OwnerReference{
+					*metav1.NewControllerRef(infra, schema.GroupVersionKind{
+						Group:   infrav1alpha1.SchemeGroupVersion.Group,
+						Version: infrav1alpha1.SchemeGroupVersion.Version,
+						Kind:    "Infrastructure",
+					}),
+				},
+			},
+			Type: corev1.SecretTypeOpaque,
+		})
+		if err != nil && !k8serrors.IsAlreadyExists(err) {
+			return nil, err
+		}
+
+		// create dashboard serviceAccount
+		_, err := c.clientset.CoreV1().ServiceAccounts(infrastructureNamespace).Create(&corev1.ServiceAccount{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "kubernetes-dashboard",
+				Namespace: infrastructureNamespace,
+				Labels: map[string]string{
+					"k8s-app": "kubernetes-dashboard",
+				},
+				OwnerReferences: []metav1.OwnerReference{
+					*metav1.NewControllerRef(infra, schema.GroupVersionKind{
+						Group:   infrav1alpha1.SchemeGroupVersion.Group,
+						Version: infrav1alpha1.SchemeGroupVersion.Version,
+						Kind:    "Infrastructure",
+					}),
+				},
+			},
+		})
+		if err != nil && !k8serrors.IsAlreadyExists(err) {
+			return nil, err
+		}
+
+		// create dashboard role
+		_, err = c.clientset.RbacV1().Roles(infrastructureNamespace).Create(&rbacv1.Role{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "kubernetes-dashboard-minimal",
+				Namespace: infrastructureNamespace,
+				OwnerReferences: []metav1.OwnerReference{
+					*metav1.NewControllerRef(infra, schema.GroupVersionKind{
+						Group:   infrav1alpha1.SchemeGroupVersion.Group,
+						Version: infrav1alpha1.SchemeGroupVersion.Version,
+						Kind:    "Infrastructure",
+					}),
+				},
+			},
+			Rules: []rbacv1.PolicyRule{
+				{
+					APIGroups: []string{""},
+					Resources: []string{"secrets"},
+					Verbs:     []string{"create"},
+				},
+				{
+					APIGroups: []string{""},
+					Resources: []string{"configmaps"},
+					Verbs:     []string{"create"},
+				},
+				{
+					APIGroups:     []string{""},
+					Resources:     []string{"secrets"},
+					ResourceNames: []string{"kubernetes-dashboard-key-holder", "kubernetes-dashboard-certs"},
+					Verbs:         []string{"get", "update", "delete"},
+				},
+				{
+					APIGroups:     []string{""},
+					Resources:     []string{"configmaps"},
+					ResourceNames: []string{"kubernetes-dashboard-settings"},
+					Verbs:         []string{"get", "update"},
+				},
+				{
+					APIGroups:     []string{""},
+					Resources:     []string{"services"},
+					ResourceNames: []string{"heapster"},
+					Verbs:         []string{"proxy"},
+				},
+				{
+					APIGroups:     []string{""},
+					Resources:     []string{"services/proxy"},
+					ResourceNames: []string{"heapster", "http:heapster:", "https:heapster:"},
+					Verbs:         []string{"get"},
+				},
+			},
+		})
+		if err != nil && !k8serrors.IsAlreadyExists(err) {
+			return nil, err
+		}
+
+		// create dashboard roleBinding
+		_, err = c.clientset.RbacV1().RoleBindings(infrastructureNamespace).Create(&rbacv1.RoleBinding{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "kubernetes-dashboard-minimal",
+				Namespace: infrastructureNamespace,
+				OwnerReferences: []metav1.OwnerReference{
+					*metav1.NewControllerRef(infra, schema.GroupVersionKind{
+						Group:   infrav1alpha1.SchemeGroupVersion.Group,
+						Version: infrav1alpha1.SchemeGroupVersion.Version,
+						Kind:    "Infrastructure",
+					}),
+				},
+			},
+			RoleRef: rbacv1.RoleRef{
+				APIGroup: "rbac.authorization.k8s.io",
+				Kind:     "Role",
+				Name:     "kubernetes-dashboard-minimal",
+			},
+			Subjects: []rbacv1.Subject{
+				{
+					Kind:      "ServiceAccount",
+					Name:      "kubernetes-dashboard",
+					Namespace: infrastructureNamespace,
+				},
+			},
+		})
+		if err != nil && !k8serrors.IsAlreadyExists(err) {
+			return nil, err
+		}
+
+		// create dashboard service
+		_, err = c.clientset.CoreV1().Services(infrastructureNamespace).Create(&corev1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "kubernetes-dashboard",
+				Labels: map[string]string{
+					"k8s-app": "kubernetes-dashboard",
+				},
+				Namespace: infrastructureNamespace,
+				OwnerReferences: []metav1.OwnerReference{
+					*metav1.NewControllerRef(infra, schema.GroupVersionKind{
+						Group:   infrav1alpha1.SchemeGroupVersion.Group,
+						Version: infrav1alpha1.SchemeGroupVersion.Version,
+						Kind:    "Infrastructure",
+					}),
+				},
+			},
+			Spec: corev1.ServiceSpec{
+				Ports: []corev1.ServicePort{
+					{
+						Port:       9090,
+						TargetPort: intstr.FromInt(9090),
+					},
+				},
+				Selector: map[string]string{
+					"k8s-app": "kubernetes-dashboard",
+				},
+			},
+		})
+		if err != nil && !k8serrors.IsAlreadyExists(err) {
+			return nil, err
+		}
+
+		// create dashboard deployment
+		historyLimit := int32(1)
+		deployment, err := c.clientset.AppsV1().Deployments(infrastructureNamespace).Create(&appsv1.Deployment{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "kubernetes-dashboard",
+				Labels: map[string]string{
+					"k8s-app": "kubernetes-dashboard",
+				},
+				Namespace: infrastructureNamespace,
+				OwnerReferences: []metav1.OwnerReference{
+					*metav1.NewControllerRef(infra, schema.GroupVersionKind{
+						Group:   infrav1alpha1.SchemeGroupVersion.Group,
+						Version: infrav1alpha1.SchemeGroupVersion.Version,
+						Kind:    "Infrastructure",
+					}),
+				},
+			},
+			Spec: appsv1.DeploymentSpec{
+				Replicas:             infra.Spec.Replicas,
+				RevisionHistoryLimit: &historyLimit,
+				Selector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"k8s-app": "kubernetes-dashboard",
+					},
+				},
+				Template: corev1.PodTemplateSpec{
+					ObjectMeta: metav1.ObjectMeta{
+						Labels: map[string]string{
+							"k8s-app": "kubernetes-dashboard",
+						},
+					},
+					Spec: corev1.PodSpec{
+						Containers: []corev1.Container{
+							{
+								Name:  "kubernetes-dashboard",
+								Image: "k8s.gcr.io/kubernetes-dashboard-amd64:v1.8.3",
+								Ports: []corev1.ContainerPort{
+									{
+										ContainerPort: 9090,
+										Protocol:      "TCP",
+									},
+								},
+								Args: []string{
+									"--enable-insecure-login=true",
+									"--insecure-bind-address=0.0.0.0",
+									"--insecure-port=9090",
+								},
+								VolumeMounts: []corev1.VolumeMount{
+									{
+										Name:      "kubernetes-dashboard-certs",
+										MountPath: "/certs",
+									},
+									{
+										Name:      "tmp-volume",
+										MountPath: "/tmp",
+									},
+								},
+								LivenessProbe: &corev1.Probe{
+									Handler: corev1.Handler{
+										HTTPGet: &corev1.HTTPGetAction{
+											Scheme: "HTTP",
+											Path:   "/",
+											Port:   intstr.FromInt(9090),
+										},
+									},
+									InitialDelaySeconds: 30,
+									TimeoutSeconds:      30,
+								},
+							},
+						},
+						Volumes: []corev1.Volume{
+							{
+								Name: "kubernetes-dashboard-certs",
+								VolumeSource: corev1.VolumeSource{
+									Secret: &corev1.SecretVolumeSource{
+										SecretName: "kubernetes-dashboard-certs",
+									},
+								},
+							},
+							{
+								Name: "tmp-volume",
+								VolumeSource: corev1.VolumeSource{
+									EmptyDir: &corev1.EmptyDirVolumeSource{},
+								},
+							},
+						},
+						ServiceAccountName: "kubernetes-dashboard",
+						Tolerations: []corev1.Toleration{
+							{
+								Key:    "node-role.kubernetes.io/master",
+								Effect: "NoSchedule",
+							},
+						},
+					},
+				},
+			},
+		})
+		if err != nil && !k8serrors.IsAlreadyExists(err) {
+			return nil, err
+		}
+
+		return deployment, nil
+	}
+
+	return nil, err
+}
+
+func (c *InfraController) createLoghorn(infra *infrav1alpha1.Infrastructure) (*appsv1.Deployment, error) {
+	return nil, nil
+}
+
+func (c *InfraController) createRancherVM(infra *infrav1alpha1.Infrastructure) (*appsv1.Deployment, error) {
+	return nil, nil
 }
