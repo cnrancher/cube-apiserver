@@ -142,7 +142,7 @@ func (c *InfraController) Run(threadiness int, stopCh <-chan struct{}) error {
 	}
 
 	glog.Info("Starting workers")
-	// Launch two workers to process Infrastructure resources
+	// Launch four workers to process Infrastructure resources
 	for i := 0; i < threadiness; i++ {
 		go wait.Until(c.runWorker, time.Second, stopCh)
 	}

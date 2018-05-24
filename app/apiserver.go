@@ -8,7 +8,9 @@ import (
 	"github.com/rancher/rancher-cube-apiserver/util"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/golang/glog"
 	"github.com/rancher/rancher-cube-apiserver/backend"
+	"github.com/rancher/rancher-cube-apiserver/controller"
 	"github.com/urfave/cli"
 )
 
@@ -56,6 +58,17 @@ func startAPIServer(c *cli.Context) error {
 	clientGenerator.InfrastructureCRDDeploy()
 
 	done := make(chan struct{})
+
+	controller := controller.NewController(&clientGenerator.Clientset, &clientGenerator.Infraclientset, clientGenerator.InformerFactory, clientGenerator.InfraInformerFactory)
+
+	go clientGenerator.InformerFactory.Start(done)
+	go clientGenerator.InfraInformerFactory.Start(done)
+
+	go func() {
+		if err := controller.Run(4, done); err != nil {
+			glog.Fatalf("Error running controller: %s", err.Error())
+		}
+	}()
 
 	server := api.NewServer(clientGenerator)
 	router := http.Handler(api.NewRouter(server))

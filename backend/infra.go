@@ -30,7 +30,7 @@ func (c *ClientGenerator) InfrastructureCRDDeploy() error {
 		},
 	}
 
-	_, err := c.apiclientset.ApiextensionsV1beta1().CustomResourceDefinitions().Create(crd)
+	_, err := c.Apiclientset.ApiextensionsV1beta1().CustomResourceDefinitions().Create(crd)
 	if err != nil && apierrors.IsAlreadyExists(err) {
 		return nil
 	}
