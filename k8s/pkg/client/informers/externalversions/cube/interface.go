@@ -19,8 +19,8 @@ limitations under the License.
 package cube
 
 import (
-	v1alpha1 "github.com/rancher/rancher-cube-apiserver/k8s/pkg/client/informers/externalversions/cube/v1alpha1"
-	internalinterfaces "github.com/rancher/rancher-cube-apiserver/k8s/pkg/client/informers/externalversions/internalinterfaces"
+	v1alpha1 "github.com/cnrancher/cube-apiserver/k8s/pkg/client/informers/externalversions/cube/v1alpha1"
+	internalinterfaces "github.com/cnrancher/cube-apiserver/k8s/pkg/client/informers/externalversions/internalinterfaces"
 )
 
 // Interface provides access to each of this group's versions.

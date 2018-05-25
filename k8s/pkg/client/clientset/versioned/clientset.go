@@ -19,7 +19,7 @@ limitations under the License.
 package versioned
 
 import (
-	cubev1alpha1 "github.com/rancher/rancher-cube-apiserver/k8s/pkg/client/clientset/versioned/typed/cube/v1alpha1"
+	cubev1alpha1 "github.com/cnrancher/cube-apiserver/k8s/pkg/client/clientset/versioned/typed/cube/v1alpha1"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"

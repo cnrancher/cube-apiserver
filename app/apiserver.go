@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/rancher/rancher-cube-apiserver/api"
-	"github.com/rancher/rancher-cube-apiserver/util"
+	"github.com/cnrancher/cube-apiserver/api"
+	"github.com/cnrancher/cube-apiserver/backend"
+	"github.com/cnrancher/cube-apiserver/controller"
+	"github.com/cnrancher/cube-apiserver/util"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/golang/glog"
-	"github.com/rancher/rancher-cube-apiserver/backend"
-	"github.com/rancher/rancher-cube-apiserver/controller"
 	"github.com/urfave/cli"
 )
 

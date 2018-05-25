@@ -1,9 +1,9 @@
 #!/bin/bash
 
-APIS_DIR="github.com/rancher/rancher-cube-apiserver/k8s/pkg/apis/cube"
+APIS_DIR="github.com/cnrancher/cube-apiserver/k8s/pkg/apis/cube"
 VERSION="v1alpha1"
 APIS_VERSION_DIR="${APIS_DIR}/${VERSION}"
-OUTPUT_DIR="github.com/rancher/rancher-cube-apiserver/k8s/pkg/client"
+OUTPUT_DIR="github.com/cnrancher/cube-apiserver/k8s/pkg/client"
 CLIENTSET_DIR="${OUTPUT_DIR}/clientset"
 LISTERS_DIR="${OUTPUT_DIR}/listers"
 INFORMERS_DIR="${OUTPUT_DIR}/informers"

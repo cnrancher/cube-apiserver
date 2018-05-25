@@ -3,9 +3,10 @@ package backend
 import (
 	"time"
 
+	infracs "github.com/cnrancher/cube-apiserver/k8s/pkg/client/clientset/versioned"
+	infrainformers "github.com/cnrancher/cube-apiserver/k8s/pkg/client/informers/externalversions"
+
 	"github.com/Sirupsen/logrus"
-	infracs "github.com/rancher/rancher-cube-apiserver/k8s/pkg/client/clientset/versioned"
-	infrainformers "github.com/rancher/rancher-cube-apiserver/k8s/pkg/client/informers/externalversions"
 	apics "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"

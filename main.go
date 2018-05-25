@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/rancher/rancher-cube-apiserver/app"
+	"github.com/cnrancher/cube-apiserver/app"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/urfave/cli"

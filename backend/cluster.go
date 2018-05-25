@@ -1,7 +1,7 @@
 package backend
 
 import (
-	"github.com/rancher/rancher-cube-apiserver/util"
+	"github.com/cnrancher/cube-apiserver/util"
 
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"

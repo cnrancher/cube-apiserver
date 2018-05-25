@@ -23,9 +23,9 @@ import (
 	sync "sync"
 	time "time"
 
-	versioned "github.com/rancher/rancher-cube-apiserver/k8s/pkg/client/clientset/versioned"
-	cube "github.com/rancher/rancher-cube-apiserver/k8s/pkg/client/informers/externalversions/cube"
-	internalinterfaces "github.com/rancher/rancher-cube-apiserver/k8s/pkg/client/informers/externalversions/internalinterfaces"
+	versioned "github.com/cnrancher/cube-apiserver/k8s/pkg/client/clientset/versioned"
+	cube "github.com/cnrancher/cube-apiserver/k8s/pkg/client/informers/externalversions/cube"
+	internalinterfaces "github.com/cnrancher/cube-apiserver/k8s/pkg/client/informers/externalversions/internalinterfaces"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"

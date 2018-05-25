@@ -19,7 +19,7 @@ limitations under the License.
 package fake
 
 import (
-	cubev1alpha1 "github.com/rancher/rancher-cube-apiserver/k8s/pkg/apis/cube/v1alpha1"
+	cubev1alpha1 "github.com/cnrancher/cube-apiserver/k8s/pkg/apis/cube/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"

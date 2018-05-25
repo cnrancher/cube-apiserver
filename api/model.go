@@ -1,7 +1,7 @@
 package api
 
 import (
-	"github.com/rancher/rancher-cube-apiserver/backend"
+	"github.com/cnrancher/cube-apiserver/backend"
 
 	"github.com/rancher/go-rancher/client"
 	"k8s.io/api/core/v1"

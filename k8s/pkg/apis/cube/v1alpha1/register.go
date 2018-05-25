@@ -5,7 +5,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
-	"github.com/rancher/rancher-cube-apiserver/k8s/pkg/apis/cube"
+	"github.com/cnrancher/cube-apiserver/k8s/pkg/apis/cube"
 )
 
 var (

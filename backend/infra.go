@@ -3,7 +3,8 @@ package backend
 import (
 	"reflect"
 
-	"github.com/rancher/rancher-cube-apiserver/k8s/pkg/apis/cube/v1alpha1"
+	"github.com/cnrancher/cube-apiserver/k8s/pkg/apis/cube/v1alpha1"
+
 	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
