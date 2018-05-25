@@ -11,8 +11,10 @@ import (
 	"github.com/cnrancher/cube-apiserver/util"
 
 	"github.com/Sirupsen/logrus"
+	_ "github.com/auth0/go-jwt-middleware"
 	"github.com/golang/glog"
 	"github.com/urfave/cli"
+	_ "github.com/urfave/negroni"
 )
 
 const (
