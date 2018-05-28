@@ -154,5 +154,13 @@ func NewRouter(s *Server) *mux.Router {
 		negroni.Wrap(inSecureRouter),
 	))
 
+	apiRouter.Methods("GET").Path("/v1/configmaps").Handler(f(schemas, s.ConfigMapGet))
+	//r.Methods("GET").Path("/v1/namespaces/{ns}/configmaps/{id}").Handler(f(schemas, s.ConfigMapGet))
+
+	apiRouter.Methods("GET").Path("/v1/dashboards").Handler(f(schemas, s.DashboardList))
+	apiRouter.Methods("GET").Path("/v1/dashboards/{id}").Handler(f(schemas, s.DashboardGet))
+	apiRouter.Methods("POST").Path("/v1/dashboards").Handler(f(schemas, s.DashboardCreate))
+	apiRouter.Methods("DELETE").Path("/v1/dashboards/{id}").Handler(f(schemas, s.DashboardDelete))
+
 	return router
 }

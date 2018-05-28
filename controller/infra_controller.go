@@ -10,7 +10,6 @@ import (
 	infrascheme "github.com/cnrancher/cube-apiserver/k8s/pkg/client/clientset/versioned/scheme"
 	infrainformers "github.com/cnrancher/cube-apiserver/k8s/pkg/client/informers/externalversions"
 	infralisters "github.com/cnrancher/cube-apiserver/k8s/pkg/client/listers/cube/v1alpha1"
-	"github.com/cnrancher/cube-apiserver/util"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -29,6 +28,7 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
+	listerscorev1 "k8s.io/client-go/listers/core/v1"
 )
 
 type InfraController struct {
@@ -38,6 +38,8 @@ type InfraController struct {
 	deploymentsSynced cache.InformerSynced
 	infraLister       infralisters.InfrastructureLister
 	infraSynced       cache.InformerSynced
+	serviceLister     listerscorev1.ServiceLister
+	serviceSynced     cache.InformerSynced
 
 	// workqueue is a rate limited work queue. This is used to queue work to be
 	// processed instead of performing it as soon as a change happens. This
@@ -60,6 +62,7 @@ func NewInfraController(
 	// types.
 	deploymentInformer := informerFactory.Apps().V1().Deployments()
 	infraInformer := infraInformerFactory.Cube().V1alpha1().Infrastructures()
+	serviceInformer := informerFactory.Core().V1().Services()
 
 	// Create event broadcaster
 	infrascheme.AddToScheme(scheme.Scheme)
@@ -76,6 +79,8 @@ func NewInfraController(
 		deploymentsSynced: deploymentInformer.Informer().HasSynced,
 		infraLister:       infraInformer.Lister(),
 		infraSynced:       infraInformer.Informer().HasSynced,
+		serviceLister:     serviceInformer.Lister(),
+		serviceSynced:     serviceInformer.Informer().HasSynced,
 		workqueue:         workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "Infrastructures"),
 		recorder:          recorder,
 	}
@@ -127,7 +132,7 @@ func (c *InfraController) Run(threadiness int, stopCh <-chan struct{}) error {
 
 	// Wait for the caches to be synced before starting workers
 	logrus.Infof("Waiting for informer caches to sync")
-	if ok := cache.WaitForCacheSync(stopCh, c.deploymentsSynced, c.infraSynced); !ok {
+	if ok := cache.WaitForCacheSync(stopCh, c.deploymentsSynced, c.infraSynced, c.serviceSynced); !ok {
 		return fmt.Errorf("failed to wait for caches to sync")
 	}
 
@@ -412,7 +417,9 @@ func (c *InfraController) detectService(infra *infrav1alpha1.Infrastructure) (bo
 	}
 
 	// TODO: need change to serviceInformer
-	_, err := c.clientset.CoreV1().Services(InfrastructureNamespace).Get(serviceName, util.GetOptions)
+	_, err := c.serviceLister.Services(InfrastructureNamespace).Get(serviceName)
+	//_, err := c.clientset.CoreV1().Services(InfrastructureNamespace).Get(serviceName, util.GetOptions)
+
 	if err != nil {
 		return false, err
 	}
