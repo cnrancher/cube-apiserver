@@ -53,8 +53,18 @@ func (f *genericInformer) Lister() cache.GenericLister {
 func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource) (GenericInformer, error) {
 	switch resource {
 	// Group=cube.rancher.io, Version=v1alpha1
+	case v1alpha1.SchemeGroupVersion.WithResource("groups"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Cube().V1alpha1().Groups().Informer()}, nil
+	case v1alpha1.SchemeGroupVersion.WithResource("groupmembers"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Cube().V1alpha1().GroupMembers().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("infrastructures"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Cube().V1alpha1().Infrastructures().Informer()}, nil
+	case v1alpha1.SchemeGroupVersion.WithResource("localconfigs"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Cube().V1alpha1().LocalConfigs().Informer()}, nil
+	case v1alpha1.SchemeGroupVersion.WithResource("principals"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Cube().V1alpha1().Principals().Informer()}, nil
+	case v1alpha1.SchemeGroupVersion.WithResource("users"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Cube().V1alpha1().Users().Informer()}, nil
 
 	}
 

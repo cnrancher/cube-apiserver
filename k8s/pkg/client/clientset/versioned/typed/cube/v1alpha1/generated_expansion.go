@@ -18,4 +18,14 @@ limitations under the License.
 
 package v1alpha1
 
+type GroupExpansion interface{}
+
+type GroupMemberExpansion interface{}
+
 type InfrastructureExpansion interface{}
+
+type LocalConfigExpansion interface{}
+
+type PrincipalExpansion interface{}
+
+type UserExpansion interface{}

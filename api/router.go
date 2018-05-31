@@ -123,4 +123,3 @@ func NewRouter(s *Server) *mux.Router {
 
 	return router
 }
-

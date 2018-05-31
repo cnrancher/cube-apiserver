@@ -22,7 +22,11 @@ func Resource(resource string) schema.GroupResource {
 func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
 		&Infrastructure{},
-		&InfrastructureList{},
+		&User{},
+		&Principal{},
+		&Group{},
+		&GroupMember{},
+		&LocalConfig{},
 	)
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
 	return nil
