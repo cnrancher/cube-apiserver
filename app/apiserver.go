@@ -61,14 +61,21 @@ func startAPIServer(c *cli.Context) error {
 
 	done := make(chan struct{})
 
-	controller := controller.NewInfraController(&clientGenerator.Clientset, &clientGenerator.Infraclientset, clientGenerator.InformerFactory, clientGenerator.InfraInformerFactory)
+	infraController := controller.NewInfraController(&clientGenerator.Clientset, &clientGenerator.Infraclientset, clientGenerator.InformerFactory, clientGenerator.CubeInformerFactory)
+	userController := controller.NewUserController(&clientGenerator.Clientset, &clientGenerator.Infraclientset, clientGenerator.InformerFactory, clientGenerator.CubeInformerFactory)
 
 	go clientGenerator.InformerFactory.Start(done)
-	go clientGenerator.InfraInformerFactory.Start(done)
+	go clientGenerator.CubeInformerFactory.Start(done)
 
 	go func() {
-		if err := controller.Run(4, done); err != nil {
-			glog.Fatalf("Error running controller: %s", err.Error())
+		if err := infraController.Run(2, done); err != nil {
+			glog.Fatalf("Error running infrastructure controller: %s", err.Error())
+		}
+	}()
+
+	go func() {
+		if err := userController.Run(2, done); err != nil {
+			glog.Fatalf("Error running user controller: %s", err.Error())
 		}
 	}()
 

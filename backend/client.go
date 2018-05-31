@@ -4,7 +4,7 @@ import (
 	"time"
 
 	infracs "github.com/cnrancher/cube-apiserver/k8s/pkg/client/clientset/versioned"
-	infrainformers "github.com/cnrancher/cube-apiserver/k8s/pkg/client/informers/externalversions"
+	cubeinformers "github.com/cnrancher/cube-apiserver/k8s/pkg/client/informers/externalversions"
 
 	"github.com/Sirupsen/logrus"
 	apics "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
@@ -19,7 +19,7 @@ type ClientGenerator struct {
 	Apiclientset         apics.Clientset
 	Infraclientset       infracs.Clientset
 	InformerFactory      informers.SharedInformerFactory
-	InfraInformerFactory infrainformers.SharedInformerFactory
+	CubeInformerFactory cubeinformers.SharedInformerFactory
 }
 
 func NewClientGenerator(kubeConfig string) *ClientGenerator {
@@ -54,13 +54,13 @@ func NewClientGenerator(kubeConfig string) *ClientGenerator {
 	}
 
 	informerFactory := informers.NewSharedInformerFactory(clientset, time.Second*30)
-	infraInformerFactory := infrainformers.NewSharedInformerFactory(infraclientset, time.Second*30)
+	infraInformerFactory := cubeinformers.NewSharedInformerFactory(infraclientset, time.Second*30)
 
 	return &ClientGenerator{
 		Clientset:            *clientset,
 		Apiclientset:         *apiclientset,
 		Infraclientset:       *infraclientset,
 		InformerFactory:      informerFactory,
-		InfraInformerFactory: infraInformerFactory,
+		CubeInformerFactory: infraInformerFactory,
 	}
 }
