@@ -28,8 +28,28 @@ type FakeCubeV1alpha1 struct {
 	*testing.Fake
 }
 
+func (c *FakeCubeV1alpha1) Groups(namespace string) v1alpha1.GroupInterface {
+	return &FakeGroups{c, namespace}
+}
+
+func (c *FakeCubeV1alpha1) GroupMembers(namespace string) v1alpha1.GroupMemberInterface {
+	return &FakeGroupMembers{c, namespace}
+}
+
 func (c *FakeCubeV1alpha1) Infrastructures(namespace string) v1alpha1.InfrastructureInterface {
 	return &FakeInfrastructures{c, namespace}
+}
+
+func (c *FakeCubeV1alpha1) LocalConfigs(namespace string) v1alpha1.LocalConfigInterface {
+	return &FakeLocalConfigs{c, namespace}
+}
+
+func (c *FakeCubeV1alpha1) Principals(namespace string) v1alpha1.PrincipalInterface {
+	return &FakePrincipals{c, namespace}
+}
+
+func (c *FakeCubeV1alpha1) Users(namespace string) v1alpha1.UserInterface {
+	return &FakeUsers{c, namespace}
 }
 
 // RESTClient returns a RESTClient that is used to communicate

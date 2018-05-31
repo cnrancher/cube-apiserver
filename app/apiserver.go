@@ -61,7 +61,7 @@ func startAPIServer(c *cli.Context) error {
 
 	done := make(chan struct{})
 
-	controller := controller.NewController(&clientGenerator.Clientset, &clientGenerator.Infraclientset, clientGenerator.InformerFactory, clientGenerator.InfraInformerFactory)
+	controller := controller.NewInfraController(&clientGenerator.Clientset, &clientGenerator.Infraclientset, clientGenerator.InformerFactory, clientGenerator.InfraInformerFactory)
 
 	go clientGenerator.InformerFactory.Start(done)
 	go clientGenerator.InfraInformerFactory.Start(done)

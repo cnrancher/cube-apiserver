@@ -24,8 +24,18 @@ import (
 
 // Interface provides access to all the informers in this group version.
 type Interface interface {
+	// Groups returns a GroupInformer.
+	Groups() GroupInformer
+	// GroupMembers returns a GroupMemberInformer.
+	GroupMembers() GroupMemberInformer
 	// Infrastructures returns a InfrastructureInformer.
 	Infrastructures() InfrastructureInformer
+	// LocalConfigs returns a LocalConfigInformer.
+	LocalConfigs() LocalConfigInformer
+	// Principals returns a PrincipalInformer.
+	Principals() PrincipalInformer
+	// Users returns a UserInformer.
+	Users() UserInformer
 }
 
 type version struct {
@@ -39,7 +49,32 @@ func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakList
 	return &version{factory: f, namespace: namespace, tweakListOptions: tweakListOptions}
 }
 
+// Groups returns a GroupInformer.
+func (v *version) Groups() GroupInformer {
+	return &groupInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// GroupMembers returns a GroupMemberInformer.
+func (v *version) GroupMembers() GroupMemberInformer {
+	return &groupMemberInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
 // Infrastructures returns a InfrastructureInformer.
 func (v *version) Infrastructures() InfrastructureInformer {
 	return &infrastructureInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// LocalConfigs returns a LocalConfigInformer.
+func (v *version) LocalConfigs() LocalConfigInformer {
+	return &localConfigInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// Principals returns a PrincipalInformer.
+func (v *version) Principals() PrincipalInformer {
+	return &principalInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// Users returns a UserInformer.
+func (v *version) Users() UserInformer {
+	return &userInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }

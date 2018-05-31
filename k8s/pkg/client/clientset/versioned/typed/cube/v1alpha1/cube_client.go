@@ -27,7 +27,12 @@ import (
 
 type CubeV1alpha1Interface interface {
 	RESTClient() rest.Interface
+	GroupsGetter
+	GroupMembersGetter
 	InfrastructuresGetter
+	LocalConfigsGetter
+	PrincipalsGetter
+	UsersGetter
 }
 
 // CubeV1alpha1Client is used to interact with features provided by the cube.rancher.io group.
@@ -35,8 +40,28 @@ type CubeV1alpha1Client struct {
 	restClient rest.Interface
 }
 
+func (c *CubeV1alpha1Client) Groups(namespace string) GroupInterface {
+	return newGroups(c, namespace)
+}
+
+func (c *CubeV1alpha1Client) GroupMembers(namespace string) GroupMemberInterface {
+	return newGroupMembers(c, namespace)
+}
+
 func (c *CubeV1alpha1Client) Infrastructures(namespace string) InfrastructureInterface {
 	return newInfrastructures(c, namespace)
+}
+
+func (c *CubeV1alpha1Client) LocalConfigs(namespace string) LocalConfigInterface {
+	return newLocalConfigs(c, namespace)
+}
+
+func (c *CubeV1alpha1Client) Principals(namespace string) PrincipalInterface {
+	return newPrincipals(c, namespace)
+}
+
+func (c *CubeV1alpha1Client) Users(namespace string) UserInterface {
+	return newUsers(c, namespace)
 }
 
 // NewForConfig creates a new CubeV1alpha1Client for the given config.

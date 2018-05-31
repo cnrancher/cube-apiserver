@@ -32,23 +32,13 @@ import (
 	"k8s.io/client-go/util/workqueue"
 )
 
-const controllerAgentName = "infra-controller"
-const infrastructureNamespace = "kube-system"
-
-const (
-	SuccessSynced         = "Synced"
-	ErrResourceExists     = "ErrResourceExists"
-	MessageResourceExists = "Resource %q already exists and is not managed by Infrastructure"
-	MessageResourceSynced = "Infrastructure synced successfully"
-)
-
 type InfraController struct {
 	clientset         kubernetes.Interface
 	infraclientset    infraclientset.Interface
 	deploymentsLister listers.DeploymentLister
 	deploymentsSynced cache.InformerSynced
-	infrasLister      infralisters.InfrastructureLister
-	infrasSynced      cache.InformerSynced
+	infraLister       infralisters.InfrastructureLister
+	infraSynced       cache.InformerSynced
 
 	// workqueue is a rate limited work queue. This is used to queue work to be
 	// processed instead of performing it as soon as a change happens. This
@@ -61,7 +51,7 @@ type InfraController struct {
 	recorder record.EventRecorder
 }
 
-func NewController(
+func NewInfraController(
 	clientset kubernetes.Interface,
 	infraclientset infraclientset.Interface,
 	informerFactory informers.SharedInformerFactory,
@@ -78,15 +68,15 @@ func NewController(
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartLogging(glog.Infof)
 	eventBroadcaster.StartRecordingToSink(&typedcorev1.EventSinkImpl{Interface: clientset.CoreV1().Events("")})
-	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, corev1.EventSource{Component: controllerAgentName})
+	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, corev1.EventSource{Component: InfraControllerAgentName})
 
 	controller := &InfraController{
 		clientset:         clientset,
 		infraclientset:    infraclientset,
 		deploymentsLister: deploymentInformer.Lister(),
 		deploymentsSynced: deploymentInformer.Informer().HasSynced,
-		infrasLister:      infraInformer.Lister(),
-		infrasSynced:      infraInformer.Informer().HasSynced,
+		infraLister:       infraInformer.Lister(),
+		infraSynced:       infraInformer.Informer().HasSynced,
 		workqueue:         workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "Infrastructures"),
 		recorder:          recorder,
 	}
@@ -138,7 +128,7 @@ func (c *InfraController) Run(threadiness int, stopCh <-chan struct{}) error {
 
 	// Wait for the caches to be synced before starting workers
 	glog.Info("Waiting for informer caches to sync")
-	if ok := cache.WaitForCacheSync(stopCh, c.deploymentsSynced, c.infrasSynced); !ok {
+	if ok := cache.WaitForCacheSync(stopCh, c.deploymentsSynced, c.infraSynced); !ok {
 		return fmt.Errorf("failed to wait for caches to sync")
 	}
 
@@ -228,7 +218,7 @@ func (c *InfraController) syncHandler(key string) error {
 	}
 
 	// Get the Infrastructure resource with this namespace/name
-	infra, err := c.infrasLister.Infrastructures(namespace).Get(name)
+	infra, err := c.infraLister.Infrastructures(namespace).Get(name)
 	if err != nil {
 		// The Infrastructure resource may no longer exist, in which case we stop
 		// processing.
@@ -253,7 +243,6 @@ func (c *InfraController) syncHandler(key string) error {
 	deployment, err := c.deploymentsLister.Deployments(infra.Namespace).Get(deploymentName)
 	// If the resource doesn't exist, we'll create it
 	if k8serrors.IsNotFound(err) {
-		//deployment, err = c.clientset.AppsV1().Deployments(infra.Namespace).Create(newDeployment(infra))
 		deployment, err = c.bundleCreate(infra)
 	}
 
@@ -267,7 +256,7 @@ func (c *InfraController) syncHandler(key string) error {
 	// If the Deployment is not controlled by this Infrastructure resource, we should log
 	// a warning to the event recorder and ret
 	if !metav1.IsControlledBy(deployment, infra) {
-		msg := fmt.Sprintf(MessageResourceExists, deployment.Name)
+		msg := fmt.Sprintf(InfraMessageResourceExists, deployment.Name)
 		c.recorder.Event(infra, corev1.EventTypeWarning, ErrResourceExists, msg)
 		return fmt.Errorf(msg)
 	}
@@ -277,8 +266,7 @@ func (c *InfraController) syncHandler(key string) error {
 	// should update the Deployment resource.
 	if infra.Spec.Replicas != nil && *infra.Spec.Replicas != *deployment.Spec.Replicas {
 		glog.V(4).Infof("Infrastructure %s replicas: %d, deployment replicas: %d", name, *infra.Spec.Replicas, *deployment.Spec.Replicas)
-		//deployment, err = c.clientset.AppsV1().Deployments(infra.Namespace).Update(newDeployment(infra))
-		deployment, err = c.bundleCreate(infra)
+		deployment, err = c.bundleUpdate(infra)
 	}
 
 	// If an error occurs during Update, we'll requeue the item so we can
@@ -295,7 +283,7 @@ func (c *InfraController) syncHandler(key string) error {
 		return err
 	}
 
-	c.recorder.Event(infra, corev1.EventTypeNormal, SuccessSynced, MessageResourceSynced)
+	c.recorder.Event(infra, corev1.EventTypeNormal, SuccessSynced, InfraMessageResourceSynced)
 	return nil
 }
 
@@ -368,7 +356,7 @@ func (c *InfraController) handleObject(obj interface{}) {
 			return
 		}
 
-		infra, err := c.infrasLister.Infrastructures(object.GetNamespace()).Get(ownerRef.Name)
+		infra, err := c.infraLister.Infrastructures(object.GetNamespace()).Get(ownerRef.Name)
 		if err != nil {
 			glog.V(4).Infof("ignoring orphaned object '%s' of infrastructure '%s'", object.GetSelfLink(), ownerRef.Name)
 			return
@@ -393,6 +381,20 @@ func (c *InfraController) bundleCreate(infra *infrav1alpha1.Infrastructure) (*ap
 	return nil, errors.New("error bundle create: infrastructure type " + infra.Spec.InfraKind + " is invalid")
 }
 
+// bundleUpdate will update all Infrastructure needed such as(Service, Rbac, Pv, Pvc, Deployment, etc...)
+// currently infrastructure types of support include (Dashboard, Longhorn, RancherVM)
+func (c *InfraController) bundleUpdate(infra *infrav1alpha1.Infrastructure) (*appsv1.Deployment, error) {
+	switch infra.Spec.InfraKind {
+	case "Dashboard":
+		return c.updateDashboard(infra)
+	case "Longhorn":
+		return c.updateLoghorn(infra)
+	case "RancherVM":
+		return c.updateRancherVM(infra)
+	}
+	return nil, errors.New("error bundle create: infrastructure type " + infra.Spec.InfraKind + " is invalid")
+}
+
 // detectService will check the Infrastructure service weather healthy or not.
 func (c *InfraController) detectService(infra *infrav1alpha1.Infrastructure) (bool, error) {
 	serviceName := ""
@@ -411,7 +413,7 @@ func (c *InfraController) detectService(infra *infrav1alpha1.Infrastructure) (bo
 	}
 
 	// TODO: need change to serviceInformer
-	_, err := c.clientset.CoreV1().Services(infrastructureNamespace).Get(serviceName, util.GetOptions)
+	_, err := c.clientset.CoreV1().Services(InfrastructureNamespace).Get(serviceName, util.GetOptions)
 	if err != nil {
 		return false, err
 	}
@@ -422,7 +424,7 @@ func (c *InfraController) detectService(infra *infrav1alpha1.Infrastructure) (bo
 func (c *InfraController) ensureNamespaceExists() error {
 	_, err := c.clientset.CoreV1().Namespaces().Create(&corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: infrastructureNamespace,
+			Name: InfrastructureNamespace,
 		},
 	})
 	return err
@@ -432,10 +434,10 @@ func (c *InfraController) createDashboard(infra *infrav1alpha1.Infrastructure) (
 	err := c.ensureNamespaceExists()
 	if err == nil || k8serrors.IsAlreadyExists(err) {
 		// create dashboard secret
-		_, err = c.clientset.CoreV1().Secrets(infrastructureNamespace).Create(&corev1.Secret{
+		_, err = c.clientset.CoreV1().Secrets(InfrastructureNamespace).Create(&corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "kubernetes-dashboard-certs",
-				Namespace: infrastructureNamespace,
+				Namespace: InfrastructureNamespace,
 				Labels: map[string]string{
 					"k8s-app": "kubernetes-dashboard",
 				},
@@ -454,10 +456,10 @@ func (c *InfraController) createDashboard(infra *infrav1alpha1.Infrastructure) (
 		}
 
 		// create dashboard serviceAccount
-		_, err := c.clientset.CoreV1().ServiceAccounts(infrastructureNamespace).Create(&corev1.ServiceAccount{
+		_, err := c.clientset.CoreV1().ServiceAccounts(InfrastructureNamespace).Create(&corev1.ServiceAccount{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "kubernetes-dashboard",
-				Namespace: infrastructureNamespace,
+				Namespace: InfrastructureNamespace,
 				Labels: map[string]string{
 					"k8s-app": "kubernetes-dashboard",
 				},
@@ -475,10 +477,10 @@ func (c *InfraController) createDashboard(infra *infrav1alpha1.Infrastructure) (
 		}
 
 		// create dashboard role
-		_, err = c.clientset.RbacV1().Roles(infrastructureNamespace).Create(&rbacv1.Role{
+		_, err = c.clientset.RbacV1().Roles(InfrastructureNamespace).Create(&rbacv1.Role{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "kubernetes-dashboard-minimal",
-				Namespace: infrastructureNamespace,
+				Namespace: InfrastructureNamespace,
 				OwnerReferences: []metav1.OwnerReference{
 					*metav1.NewControllerRef(infra, schema.GroupVersionKind{
 						Group:   infrav1alpha1.SchemeGroupVersion.Group,
@@ -529,10 +531,10 @@ func (c *InfraController) createDashboard(infra *infrav1alpha1.Infrastructure) (
 		}
 
 		// create dashboard roleBinding
-		_, err = c.clientset.RbacV1().RoleBindings(infrastructureNamespace).Create(&rbacv1.RoleBinding{
+		_, err = c.clientset.RbacV1().RoleBindings(InfrastructureNamespace).Create(&rbacv1.RoleBinding{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "kubernetes-dashboard-minimal",
-				Namespace: infrastructureNamespace,
+				Namespace: InfrastructureNamespace,
 				OwnerReferences: []metav1.OwnerReference{
 					*metav1.NewControllerRef(infra, schema.GroupVersionKind{
 						Group:   infrav1alpha1.SchemeGroupVersion.Group,
@@ -550,7 +552,7 @@ func (c *InfraController) createDashboard(infra *infrav1alpha1.Infrastructure) (
 				{
 					Kind:      "ServiceAccount",
 					Name:      "kubernetes-dashboard",
-					Namespace: infrastructureNamespace,
+					Namespace: InfrastructureNamespace,
 				},
 			},
 		})
@@ -559,13 +561,13 @@ func (c *InfraController) createDashboard(infra *infrav1alpha1.Infrastructure) (
 		}
 
 		// create dashboard service
-		_, err = c.clientset.CoreV1().Services(infrastructureNamespace).Create(&corev1.Service{
+		_, err = c.clientset.CoreV1().Services(InfrastructureNamespace).Create(&corev1.Service{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "kubernetes-dashboard",
 				Labels: map[string]string{
 					"k8s-app": "kubernetes-dashboard",
 				},
-				Namespace: infrastructureNamespace,
+				Namespace: InfrastructureNamespace,
 				OwnerReferences: []metav1.OwnerReference{
 					*metav1.NewControllerRef(infra, schema.GroupVersionKind{
 						Group:   infrav1alpha1.SchemeGroupVersion.Group,
@@ -592,13 +594,13 @@ func (c *InfraController) createDashboard(infra *infrav1alpha1.Infrastructure) (
 
 		// create dashboard deployment
 		historyLimit := int32(1)
-		deployment, err := c.clientset.AppsV1().Deployments(infrastructureNamespace).Create(&appsv1.Deployment{
+		deployment, err := c.clientset.AppsV1().Deployments(InfrastructureNamespace).Create(&appsv1.Deployment{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "kubernetes-dashboard",
 				Labels: map[string]string{
 					"k8s-app": "kubernetes-dashboard",
 				},
-				Namespace: infrastructureNamespace,
+				Namespace: InfrastructureNamespace,
 				OwnerReferences: []metav1.OwnerReference{
 					*metav1.NewControllerRef(infra, schema.GroupVersionKind{
 						Group:   infrav1alpha1.SchemeGroupVersion.Group,
@@ -702,5 +704,123 @@ func (c *InfraController) createLoghorn(infra *infrav1alpha1.Infrastructure) (*a
 }
 
 func (c *InfraController) createRancherVM(infra *infrav1alpha1.Infrastructure) (*appsv1.Deployment, error) {
+	return nil, nil
+}
+
+func (c *InfraController) updateDashboard(infra *infrav1alpha1.Infrastructure) (*appsv1.Deployment, error) {
+	err := c.ensureNamespaceExists()
+	if err == nil || k8serrors.IsAlreadyExists(err) {
+		// update dashboard deployment
+		historyLimit := int32(1)
+		deployment, err := c.clientset.AppsV1().Deployments(InfrastructureNamespace).Update(&appsv1.Deployment{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "kubernetes-dashboard",
+				Labels: map[string]string{
+					"k8s-app": "kubernetes-dashboard",
+				},
+				Namespace: InfrastructureNamespace,
+				OwnerReferences: []metav1.OwnerReference{
+					*metav1.NewControllerRef(infra, schema.GroupVersionKind{
+						Group:   infrav1alpha1.SchemeGroupVersion.Group,
+						Version: infrav1alpha1.SchemeGroupVersion.Version,
+						Kind:    "Infrastructure",
+					}),
+				},
+			},
+			Spec: appsv1.DeploymentSpec{
+				Replicas:             infra.Spec.Replicas,
+				RevisionHistoryLimit: &historyLimit,
+				Selector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"k8s-app": "kubernetes-dashboard",
+					},
+				},
+				Template: corev1.PodTemplateSpec{
+					ObjectMeta: metav1.ObjectMeta{
+						Labels: map[string]string{
+							"k8s-app": "kubernetes-dashboard",
+						},
+					},
+					Spec: corev1.PodSpec{
+						Containers: []corev1.Container{
+							{
+								Name:  "kubernetes-dashboard",
+								Image: "k8s.gcr.io/kubernetes-dashboard-amd64:v1.8.3",
+								Ports: []corev1.ContainerPort{
+									{
+										ContainerPort: 9090,
+										Protocol:      "TCP",
+									},
+								},
+								Args: []string{
+									"--enable-insecure-login=true",
+									"--insecure-bind-address=0.0.0.0",
+									"--insecure-port=9090",
+								},
+								VolumeMounts: []corev1.VolumeMount{
+									{
+										Name:      "kubernetes-dashboard-certs",
+										MountPath: "/certs",
+									},
+									{
+										Name:      "tmp-volume",
+										MountPath: "/tmp",
+									},
+								},
+								LivenessProbe: &corev1.Probe{
+									Handler: corev1.Handler{
+										HTTPGet: &corev1.HTTPGetAction{
+											Scheme: "HTTP",
+											Path:   "/",
+											Port:   intstr.FromInt(9090),
+										},
+									},
+									InitialDelaySeconds: 30,
+									TimeoutSeconds:      30,
+								},
+							},
+						},
+						Volumes: []corev1.Volume{
+							{
+								Name: "kubernetes-dashboard-certs",
+								VolumeSource: corev1.VolumeSource{
+									Secret: &corev1.SecretVolumeSource{
+										SecretName: "kubernetes-dashboard-certs",
+									},
+								},
+							},
+							{
+								Name: "tmp-volume",
+								VolumeSource: corev1.VolumeSource{
+									EmptyDir: &corev1.EmptyDirVolumeSource{},
+								},
+							},
+						},
+						ServiceAccountName: "kubernetes-dashboard",
+						Tolerations: []corev1.Toleration{
+							{
+								Key:    "node-role.kubernetes.io/master",
+								Effect: "NoSchedule",
+							},
+						},
+					},
+				},
+			},
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		return deployment, nil
+	}
+
+	return nil, err
+}
+
+func (c *InfraController) updateLoghorn(infra *infrav1alpha1.Infrastructure) (*appsv1.Deployment, error) {
+	return nil, nil
+}
+
+func (c *InfraController) updateRancherVM(infra *infrav1alpha1.Infrastructure) (*appsv1.Deployment, error) {
 	return nil, nil
 }

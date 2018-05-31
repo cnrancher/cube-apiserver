@@ -18,6 +18,22 @@ limitations under the License.
 
 package v1alpha1
 
+// GroupListerExpansion allows custom methods to be added to
+// GroupLister.
+type GroupListerExpansion interface{}
+
+// GroupNamespaceListerExpansion allows custom methods to be added to
+// GroupNamespaceLister.
+type GroupNamespaceListerExpansion interface{}
+
+// GroupMemberListerExpansion allows custom methods to be added to
+// GroupMemberLister.
+type GroupMemberListerExpansion interface{}
+
+// GroupMemberNamespaceListerExpansion allows custom methods to be added to
+// GroupMemberNamespaceLister.
+type GroupMemberNamespaceListerExpansion interface{}
+
 // InfrastructureListerExpansion allows custom methods to be added to
 // InfrastructureLister.
 type InfrastructureListerExpansion interface{}
@@ -25,3 +41,27 @@ type InfrastructureListerExpansion interface{}
 // InfrastructureNamespaceListerExpansion allows custom methods to be added to
 // InfrastructureNamespaceLister.
 type InfrastructureNamespaceListerExpansion interface{}
+
+// LocalConfigListerExpansion allows custom methods to be added to
+// LocalConfigLister.
+type LocalConfigListerExpansion interface{}
+
+// LocalConfigNamespaceListerExpansion allows custom methods to be added to
+// LocalConfigNamespaceLister.
+type LocalConfigNamespaceListerExpansion interface{}
+
+// PrincipalListerExpansion allows custom methods to be added to
+// PrincipalLister.
+type PrincipalListerExpansion interface{}
+
+// PrincipalNamespaceListerExpansion allows custom methods to be added to
+// PrincipalNamespaceLister.
+type PrincipalNamespaceListerExpansion interface{}
+
+// UserListerExpansion allows custom methods to be added to
+// UserLister.
+type UserListerExpansion interface{}
+
+// UserNamespaceListerExpansion allows custom methods to be added to
+// UserNamespaceLister.
+type UserNamespaceListerExpansion interface{}
