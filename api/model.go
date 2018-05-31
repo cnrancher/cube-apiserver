@@ -26,6 +26,13 @@ type Cluster struct {
 	ComponentStatuses *v1.ComponentStatusList  `json:"componentStatuses"`
 }
 
+type Token struct {
+	Name      string `json:"name"`
+	LoginName string `json:"loginName"`
+	Password  string `json:"password"`
+	Token     string `json:"token"`
+}
+
 func NewServer(c *backend.ClientGenerator) *Server {
 	s := &Server{
 		c: c,
