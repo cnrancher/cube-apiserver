@@ -18,7 +18,7 @@ type Infrastructure struct {
 
 type InfraSpec struct {
 	DisplayName string `json:"displayName"`
-	Desc        string `json:"desc"`
+	Description string `json:"description"`
 	Icon        string `json:"icon"`
 	Replicas    *int32 `json:"replicas"`
 	InfraKind   string `json:"infraKind"`
