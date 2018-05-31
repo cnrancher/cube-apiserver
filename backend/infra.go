@@ -11,21 +11,21 @@ import (
 )
 
 const (
-	Plural   = "infrastructures"
-	Group    = "cube.rancher.io"
-	Version  = "v1alpha1"
-	FullName = Plural + "." + Group
+	InfraPlural   = "infrastructures"
+	InfraGroup    = "cube.rancher.io"
+	InfraVersion  = "v1alpha1"
+	InfraFullName = InfraPlural + "." + InfraGroup
 )
 
 func (c *ClientGenerator) InfrastructureCRDDeploy() error {
 	crd := &v1beta1.CustomResourceDefinition{
-		ObjectMeta: metaV1.ObjectMeta{Name: FullName},
+		ObjectMeta: metaV1.ObjectMeta{Name: InfraFullName},
 		Spec: v1beta1.CustomResourceDefinitionSpec{
-			Group:   Group,
-			Version: Version,
+			Group:   InfraGroup,
+			Version: InfraVersion,
 			Scope:   v1beta1.NamespaceScoped,
 			Names: v1beta1.CustomResourceDefinitionNames{
-				Plural: Plural,
+				Plural: InfraPlural,
 				Kind:   reflect.TypeOf(v1alpha1.Infrastructure{}).Name(),
 			},
 		},

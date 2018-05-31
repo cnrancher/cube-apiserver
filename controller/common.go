@@ -1,8 +1,10 @@
 package controller
 
 const (
-	SuccessSynced              = "Synced"
-	ErrResourceExists          = "ErrResourceExists"
+	SuccessSynced         = "Synced"
+	ErrResourceExists     = "ErrResourceExists"
+	searchIndexDefaultLen = 6
+
 	InfraControllerAgentName   = "infra-controller"
 	InfrastructureNamespace    = "kube-system"
 	InfraMessageResourceExists = "Resource %q already exists and is not managed by Infrastructure"
@@ -10,5 +12,7 @@ const (
 	UserControllerAgentName    = "user-controller"
 	UserMessageResourceExists  = "Resource %q already exists and is not managed by User"
 	UserMessageResourceSynced  = "User synced successfully"
-	UserByPrincipalIndex       = "auth.management.cattle.io/userByPrincipal"
+	UserByPrincipalIndex       = "auth.user.cube.rancher.io/user-principal-index"
+	UserByUsernameIndex        = "auth.user.cube.rancher.io/user-username-index"
+	UserSearchIndex            = "auth.user.cube.rancher.io/user-search-index"
 )
