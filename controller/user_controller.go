@@ -55,6 +55,8 @@ func NewUserController(clientset kubernetes.Interface,
 	// add index for userInformer
 	userIndexers := map[string]cache.IndexFunc{
 		UserByPrincipalIndex: userByPrincipal,
+		UserByUsernameIndex:  userByUsername,
+		UserSearchIndex:      userSearchIndexer,
 	}
 
 	if err := userInformer.Informer().AddIndexers(userIndexers); err != nil {
@@ -239,4 +241,41 @@ func userByPrincipal(obj interface{}) ([]string, error) {
 	}
 
 	return u.PrincipalIDs, nil
+}
+
+func userByUsername(obj interface{}) ([]string, error) {
+	user, ok := obj.(*userv1alpha1.User)
+	if !ok {
+		return []string{}, nil
+	}
+	return []string{user.Username}, nil
+}
+
+func userSearchIndexer(obj interface{}) ([]string, error) {
+	user, ok := obj.(*userv1alpha1.User)
+	if !ok {
+		return []string{}, nil
+	}
+	var fieldIndexes []string
+
+	fieldIndexes = append(fieldIndexes, indexField(user.Username, minOf(len(user.Username), searchIndexDefaultLen))...)
+	fieldIndexes = append(fieldIndexes, indexField(user.DisplayName, minOf(len(user.DisplayName), searchIndexDefaultLen))...)
+	fieldIndexes = append(fieldIndexes, indexField(user.ObjectMeta.Name, minOf(len(user.ObjectMeta.Name), searchIndexDefaultLen))...)
+
+	return fieldIndexes, nil
+}
+
+func minOf(length int, defaultLen int) int {
+	if length < defaultLen {
+		return length
+	}
+	return defaultLen
+}
+
+func indexField(field string, maxindex int) []string {
+	var fieldIndexes []string
+	for i := 2; i <= maxindex; i++ {
+		fieldIndexes = append(fieldIndexes, field[0:i])
+	}
+	return fieldIndexes
 }
