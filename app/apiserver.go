@@ -11,10 +11,8 @@ import (
 	"github.com/cnrancher/cube-apiserver/util"
 
 	"github.com/Sirupsen/logrus"
-	_ "github.com/auth0/go-jwt-middleware"
 	"github.com/golang/glog"
 	"github.com/urfave/cli"
-	"github.com/urfave/negroni"
 )
 
 const (
@@ -77,14 +75,9 @@ func startAPIServer(c *cli.Context) error {
 	server := api.NewServer(clientGenerator)
 	router := http.Handler(api.NewRouter(server))
 
-	n := negroni.New()
-	n.Use(negroni.NewRecovery())
-	n.Use(negroni.NewLogger())
-	n.UseHandler(router)
-
 	logrus.Infof("RancherCUBE: listening on %s", apiServerListenAddr)
 
-	go http.ListenAndServe(apiServerListenAddr, n)
+	go http.ListenAndServe(apiServerListenAddr, router)
 
 	util.RegisterShutdownChannel(done)
 	<-done

@@ -3,10 +3,23 @@ rancher-cube-apiserver
 
 API server for RancherCUBE.
 
+## Prepare
+
+Generate JWT RS256 key to `/etc/rancher/cube`
+
+```
+mkdir -p /etc/rancher/cube && cd /etc/rancher/cube
+
+ssh-keygen -t rsa -b 4096 -f id_rsa
+
+# Don't add passphrase
+
+openssl rsa -in id_rsa -pubout -outform PEM -out id_rsa.pub
+```
+
 ## Building
 
 `make`
-
 
 ## Running
 
