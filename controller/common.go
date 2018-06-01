@@ -32,6 +32,10 @@ const (
 	UserIDLabel                   = "auth.user.cube.rancher.io/token-user-id"
 	ClusterRoleBindingByNameIndex = "auth.user.cube.rancher.io/crb-name"
 	ClusterRoleByNameIndex        = "auth.user.cube.rancher.io/cr-name"
+	LonghornNamespace             = "longhorn-system"
+
+	DashboardDesc = "Kubernetes Dashboard is a general purpose, web-based UI for Kubernetes clusters. It allows users to manage applications running in the cluster and troubleshoot them, as well as manage the cluster itself."
+	LanghornDesc  = "Longhorn is a distributed block storage system for Kubernetes powered by Rancher Labs."
 )
 
 func GetLocalPrincipalID(user *userv1alpha1.User) string {

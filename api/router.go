@@ -154,13 +154,18 @@ func NewRouter(s *Server) *mux.Router {
 		negroni.Wrap(inSecureRouter),
 	))
 
-	apiRouter.Methods("GET").Path("/v1/configmaps").Handler(f(schemas, s.ConfigMapGet))
+	apiRouter.Methods("GET").Path("/configmaps").Handler(f(schemas, s.ConfigMapGet))
 	//r.Methods("GET").Path("/v1/namespaces/{ns}/configmaps/{id}").Handler(f(schemas, s.ConfigMapGet))
 
-	apiRouter.Methods("GET").Path("/v1/dashboards").Handler(f(schemas, s.DashboardList))
-	apiRouter.Methods("GET").Path("/v1/dashboards/{id}").Handler(f(schemas, s.DashboardGet))
-	apiRouter.Methods("POST").Path("/v1/dashboards").Handler(f(schemas, s.DashboardCreate))
-	apiRouter.Methods("DELETE").Path("/v1/dashboards/{id}").Handler(f(schemas, s.DashboardDelete))
+	apiRouter.Methods("GET").Path("/dashboards").Handler(f(schemas, s.DashboardList))
+	apiRouter.Methods("GET").Path("/dashboards/{id}").Handler(f(schemas, s.DashboardGet))
+	apiRouter.Methods("POST").Path("/dashboards").Handler(f(schemas, s.DashboardCreate))
+	apiRouter.Methods("DELETE").Path("/dashboards/{id}").Handler(f(schemas, s.DashboardDelete))
+
+	apiRouter.Methods("GET").Path("/longhorns").Handler(f(schemas, s.LonghornList))
+	apiRouter.Methods("GET").Path("/longhorns/{id}").Handler(f(schemas, s.LonghornGet))
+	apiRouter.Methods("POST").Path("/longhorns").Handler(f(schemas, s.LonghornCreate))
+	apiRouter.Methods("DELETE").Path("/longhorns/{id}").Handler(f(schemas, s.LonghornDelete))
 
 	return router
 }

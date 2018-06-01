@@ -5,40 +5,91 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"github.com/cnrancher/cube-apiserver/controller"
 )
 
 var (
-	IngressNs   = "kube-system"
-	IngressName = "cube-rancher-ingress"
-	host        = "test.cube.com"
-	port        = 9090
+	DbIngressName = "cube-rancher-ingress-db"
+	LhIngressName = "cube-rancher-ingress-lh"
+	dbHost        = "dashboard.cube.rancher.io"
+	lhHost        = "longhorn.cube.rancher.io"
 )
 
-func (c *ClientGenerator) IngressDeploy() error {
-	host := v1beta1.IngressRule{
-		Host: host,
+func (c *ClientGenerator) DashboardIngressDeploy() error {
+	dbBackend := v1beta1.IngressBackend{
+		ServiceName: "kubernetes-dashboard",
+		ServicePort: intstr.FromInt(9090),
 	}
 
-	ingress := &v1beta1.Ingress{
+	dbIngress := &v1beta1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      IngressName,
-			Namespace: IngressNs,
+			Name:      DbIngressName,
+			Namespace: KubeSystemNamespace,
 		},
 
 		Spec: v1beta1.IngressSpec{
 			Rules: []v1beta1.IngressRule{
-				host,
-			},
-			Backend: &v1beta1.IngressBackend{
-				ServiceName: "kubernetes-dashboard",
-				ServicePort: intstr.FromInt(port),
+				{
+					Host: dbHost,
+					IngressRuleValue: v1beta1.IngressRuleValue{
+						HTTP: &v1beta1.HTTPIngressRuleValue{
+							Paths: []v1beta1.HTTPIngressPath{
+								{
+									Path:    "/",
+									Backend: dbBackend,
+								},
+							},
+						},
+					},
+				},
 			},
 		},
 	}
-	_, err := c.Clientset.ExtensionsV1beta1().Ingresses(IngressNs).Create(ingress)
+
+	_, err := c.Clientset.ExtensionsV1beta1().Ingresses(KubeSystemNamespace).Create(dbIngress)
 	if err != nil && k8serrors.IsAlreadyExists(err) {
 		return nil
 	}
+
+	return err
+}
+
+func (c *ClientGenerator) LonghornIngressDeploy() error {
+	lhBackend := v1beta1.IngressBackend{
+		ServiceName: "longhorn-frontend",
+		ServicePort: intstr.FromInt(9091),
+	}
+
+	lhIngress := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      LhIngressName,
+			Namespace: controller.LonghornNamespace,
+		},
+
+		Spec: v1beta1.IngressSpec{
+			Rules: []v1beta1.IngressRule{
+				{
+					Host: lhHost,
+					IngressRuleValue: v1beta1.IngressRuleValue{
+						HTTP: &v1beta1.HTTPIngressRuleValue{
+							Paths: []v1beta1.HTTPIngressPath{
+								{
+									Path:    "/",
+									Backend: lhBackend,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	_, err := c.Clientset.ExtensionsV1beta1().Ingresses(controller.LonghornNamespace).Create(lhIngress)
+	if err != nil && k8serrors.IsAlreadyExists(err) {
+		return nil
+	}
+
 	return err
 }
 

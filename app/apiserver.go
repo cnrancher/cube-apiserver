@@ -57,10 +57,12 @@ func startAPIServer(c *cli.Context) error {
 	// generate & deploy customer resources
 	clientGenerator.UserCRDDeploy()
 	clientGenerator.InfrastructureCRDDeploy()
+	clientGenerator.LonghornEngineCRDDeploy()
+	clientGenerator.LonghornReplicaCRDDeploy()
+	clientGenerator.LonghornSettingCRDDeploy()
+	clientGenerator.LonghornVolumeCRDDeploy()
 	// generate & deploy config map resources for base info
 	clientGenerator.ConfigMapDeploy()
-	// generate & deploy ingress resources for visit
-	clientGenerator.IngressDeploy()
 
 	done := make(chan struct{})
 

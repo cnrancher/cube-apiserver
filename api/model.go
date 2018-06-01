@@ -11,6 +11,26 @@ import (
 
 var KubeConfigLocation string
 
+var sType *schemaType
+
+type schemaType struct {
+	Configmap string
+	Dashboard string
+	Longhorn  string
+}
+
+func GetSchemaType() *schemaType {
+	if sType == nil {
+		sType = &schemaType{
+			Configmap: "configmap",
+			Dashboard: "dashboard",
+			Longhorn:  "longhorn",
+		}
+	}
+
+	return sType
+}
+
 type Server struct {
 	// TODO: HTTP reverse proxy should be here
 	c *backend.ClientGenerator
@@ -28,10 +48,11 @@ type ConfigMap struct {
 	ConfigMap *v1.ConfigMap `json:"configmap"`
 }
 
-type Dashboard struct {
+type Infrastructure struct {
 	client.Resource
 
 	Dashboard *v1alpha1.Infrastructure `json:"dashboard"`
+	Longhorn  *v1alpha1.Infrastructure `json:"longhorn"`
 	Host      string                   `json:"host"`
 }
 
@@ -73,9 +94,9 @@ func NewSchema() *client.Schemas {
 
 	nodeSchema(schemas.AddType("node", Node{}))
 	clusterSchema(schemas.AddType("cluster", Cluster{}))
-	configMapSchema(schemas.AddType("configmap", ConfigMap{}))
-	dashboardSchema(schemas.AddType("dashboard", Dashboard{}))
-
+	configMapSchema(schemas.AddType(GetSchemaType().Configmap, ConfigMap{}))
+	dashboardSchema(schemas.AddType(GetSchemaType().Dashboard, Infrastructure{}))
+	longhornSchema(schemas.AddType(GetSchemaType().Longhorn, Infrastructure{}))
 	return schemas
 }
 
@@ -107,7 +128,7 @@ func configMapSchema(cm *client.Schema) {
 	cm.CollectionMethods = []string{"GET"}
 	cm.ResourceMethods = []string{"GET"}
 
-	cm.ResourceFields["configmap"] = client.Field{
+	cm.ResourceFields[GetSchemaType().Configmap] = client.Field{
 		Type:     "struct",
 		Nullable: true,
 	}
@@ -117,47 +138,61 @@ func dashboardSchema(dashboard *client.Schema) {
 	dashboard.CollectionMethods = []string{"GET", "POST"}
 	dashboard.ResourceMethods = []string{"GET", "DELETE"}
 
-	dashboard.ResourceFields["dashboard"] = client.Field{
+	dashboard.ResourceFields[GetSchemaType().Dashboard] = client.Field{
 		Type:     "struct",
 		Nullable: true,
 	}
 
 }
 
-func toDashboardCollection(list *v1alpha1.InfrastructureList) *client.GenericCollection {
-	data := []interface{}{}
-	for _, item := range list.Items {
-		data = append(data, toDashboardResource(&item, nil))
+func longhornSchema(longhorn *client.Schema) {
+	longhorn.CollectionMethods = []string{"GET", "POST"}
+	longhorn.ResourceMethods = []string{"GET", "DELETE"}
+
+	longhorn.ResourceFields[GetSchemaType().Longhorn] = client.Field{
+		Type:     "struct",
+		Nullable: true,
 	}
-	return &client.GenericCollection{Data: data, Collection: client.Collection{ResourceType: "dashboard"}}
+
 }
 
-func toDashboardResource(dashboard *v1alpha1.Infrastructure, ingress *v1beta1.Ingress) *Dashboard {
-	name := dashboard.GetName()
+func toInfrastructureCollection(list *v1alpha1.InfrastructureList, infraType string) *client.GenericCollection {
+	data := []interface{}{}
+	for _, item := range list.Items {
+		data = append(data, toInfrastructureResource(&item, infraType, nil, 0))
+	}
+	return &client.GenericCollection{Data: data, Collection: client.Collection{ResourceType: infraType}}
+}
+
+func toInfrastructureResource(infra *v1alpha1.Infrastructure, infraType string, ingress *v1beta1.Ingress, index int) *Infrastructure {
+	name := infra.GetName()
 	host := ""
 	if ingress != nil {
 		host = ingress.Spec.Rules[0].Host
+		path := ingress.Spec.Rules[0].HTTP.Paths[index].Path
+		host = host + path
 	}
 	if name == "" {
 		return nil
 	}
-	return &Dashboard{
+	return &Infrastructure{
 		Resource: client.Resource{
 			Id:      string(name),
-			Type:    "dashboard",
+			Type:    infraType,
 			Actions: map[string]string{},
 		},
-		Dashboard: dashboard,
+		Dashboard: infra,
+		Longhorn:  infra,
 		Host:      host,
 	}
 }
 
-func toDeleteResource() *Result {
-	msg := "success"
+func toDeleteResource(resType string) *Result {
+	msg := "delete success"
 	return &Result{
 		Resource: client.Resource{
 			Id:      string(msg),
-			Type:    "dashboard",
+			Type:    resType,
 			Actions: map[string]string{},
 		},
 		Message: msg,
@@ -172,7 +207,7 @@ func toConfigMapResource(configmap *v1.ConfigMap) *ConfigMap {
 	return &ConfigMap{
 		Resource: client.Resource{
 			Id:      string(name),
-			Type:    "configmap",
+			Type:    GetSchemaType().Configmap,
 			Actions: map[string]string{},
 		},
 		ConfigMap: configmap,
@@ -184,7 +219,7 @@ func toConfigMapCollection(configmapList *v1.ConfigMapList) *client.GenericColle
 	for _, cm := range configmapList.Items {
 		data = append(data, toConfigMapResource(&cm))
 	}
-	return &client.GenericCollection{Data: data, Collection: client.Collection{ResourceType: "configmap"}}
+	return &client.GenericCollection{Data: data, Collection: client.Collection{ResourceType: GetSchemaType().Configmap}}
 }
 
 func toNodeResource(node *v1.Node) *Node {

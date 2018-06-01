@@ -13,25 +13,24 @@ func (s *Server) DashboardList(rw http.ResponseWriter, req *http.Request) error 
 
 	list, err := s.c.DashBoardList()
 	if err != nil || list == nil {
-		return errors.Wrap(err, "fail to read dashboard")
+		return errors.Wrap(err, "failed to read dashboard")
 	}
-	apiContext.Write(toDashboardCollection(list))
+	apiContext.Write(toInfrastructureCollection(list, GetSchemaType().Dashboard))
 	return nil
 }
 
 func (s *Server) DashboardGet(rw http.ResponseWriter, req *http.Request) error {
-
 	apiContext := api.GetApiContext(req)
 
 	db, err := s.c.DashBoardGet()
 	if err != nil || db == nil {
-		return errors.Wrap(err, "fail to read dashboard")
+		return errors.Wrap(err, "failed to read dashboard")
 	}
-	ing, err := s.c.IngressGet(backend.IngressNs, backend.IngressName)
+	ing, err := s.c.IngressGet(backend.KubeSystemNamespace, backend.DbIngressName)
 	if err != nil {
 		return errors.Wrap(err, "failed to get ingress")
 	}
-	apiContext.Write(toDashboardResource(db, ing))
+	apiContext.Write(toInfrastructureResource(db, GetSchemaType().Dashboard, ing, 0))
 	return nil
 }
 
@@ -42,11 +41,11 @@ func (s *Server) DashboardCreate(rw http.ResponseWriter, req *http.Request) erro
 	if err != nil {
 		return errors.Wrap(err, "failed to create dashboard")
 	}
-	ing, err := s.c.IngressGet(backend.IngressNs, backend.IngressName)
+	ing, err := s.c.IngressGet(backend.KubeSystemNamespace, backend.DbIngressName)
 	if err != nil {
 		return errors.Wrap(err, "failed to get ingress")
 	}
-	apiContext.Write(toDashboardResource(db, ing))
+	apiContext.Write(toInfrastructureResource(db, GetSchemaType().Dashboard, ing, 0))
 	return nil
 }
 
@@ -56,6 +55,6 @@ func (s *Server) DashboardDelete(rw http.ResponseWriter, req *http.Request) erro
 	if err != nil {
 		return errors.Wrap(err, "failed to delete dashboard")
 	}
-	apiContext.Write(toDeleteResource())
+	apiContext.Write(toDeleteResource(GetSchemaType().Dashboard))
 	return nil
 }

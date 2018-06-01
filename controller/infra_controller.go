@@ -29,6 +29,7 @@ import (
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
 	listerscorev1 "k8s.io/client-go/listers/core/v1"
+	"k8s.io/api/extensions/v1beta1"
 )
 
 type InfraController struct {
@@ -402,13 +403,16 @@ func (c *InfraController) bundleUpdate(infra *infrav1alpha1.Infrastructure) (*ap
 // detectService will check the Infrastructure service weather healthy or not.
 func (c *InfraController) detectService(infra *infrav1alpha1.Infrastructure) (bool, error) {
 	serviceName := ""
+	namespace := ""
 
 	switch infra.Spec.InfraKind {
 	case "Dashboard":
 		serviceName = "kubernetes-dashboard"
+		namespace = InfrastructureNamespace
 	case "Longhorn":
 		// TODO: need change to the real name
-		serviceName = "longhorn"
+		serviceName = "longhorn-frontend"
+		namespace = LonghornNamespace
 	case "RancherVM":
 		// TODO: need change to the real name
 		serviceName = "rancher-vm"
@@ -417,8 +421,7 @@ func (c *InfraController) detectService(infra *infrav1alpha1.Infrastructure) (bo
 	}
 
 	// TODO: need change to serviceInformer
-	_, err := c.serviceLister.Services(InfrastructureNamespace).Get(serviceName)
-	//_, err := c.clientset.CoreV1().Services(InfrastructureNamespace).Get(serviceName, util.GetOptions)
+	_, err := c.serviceLister.Services(namespace).Get(serviceName)
 
 	if err != nil {
 		return false, err
@@ -427,17 +430,17 @@ func (c *InfraController) detectService(infra *infrav1alpha1.Infrastructure) (bo
 	return true, nil
 }
 
-func (c *InfraController) ensureNamespaceExists() error {
+func (c *InfraController) ensureNamespaceExists(namespace string) error {
 	_, err := c.clientset.CoreV1().Namespaces().Create(&corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: InfrastructureNamespace,
+			Name: namespace,
 		},
 	})
 	return err
 }
 
 func (c *InfraController) createDashboard(infra *infrav1alpha1.Infrastructure) (*appsv1.Deployment, error) {
-	err := c.ensureNamespaceExists()
+	err := c.ensureNamespaceExists(InfrastructureNamespace)
 	if err == nil || k8serrors.IsAlreadyExists(err) {
 		// create dashboard secret
 		_, err = c.clientset.CoreV1().Secrets(InfrastructureNamespace).Create(&corev1.Secret{
@@ -565,6 +568,52 @@ func (c *InfraController) createDashboard(infra *infrav1alpha1.Infrastructure) (
 		if err != nil && !k8serrors.IsAlreadyExists(err) {
 			return nil, err
 		}
+
+		//kubectl create clusterrolebinding add-on-cluster-admin \
+		//--clusterrole=cluster-admin \
+		//--serviceaccount=kube-system:default
+
+		//RoleRef: rbacv1.RoleRef{
+		//	APIGroup: "rbac.authorization.k8s.io",
+		//	Kind:     "ClusterRole",
+		//	Name:     "longhorn-role",
+		//},
+		//	Subjects: []rbacv1.Subject{
+		//		{
+		//			Kind:      "ServiceAccount",
+		//			Name:      "longhorn-service-account",
+		//			Namespace: LonghornNamespace,
+		//		},
+		//	},
+
+		// create dashboard clusterRoleBinding
+		//_, err = c.clientset.RbacV1().ClusterRoleBindings().Create(&rbacv1.ClusterRoleBinding{
+		//	ObjectMeta: metav1.ObjectMeta{
+		//		Name: "kubernetes-dashboard-admin",
+		//		OwnerReferences: []metav1.OwnerReference{
+		//			*metav1.NewControllerRef(infra, schema.GroupVersionKind{
+		//				Group:   infrav1alpha1.SchemeGroupVersion.Group,
+		//				Version: infrav1alpha1.SchemeGroupVersion.Version,
+		//				Kind:    "Infrastructure",
+		//			}),
+		//		},
+		//	},
+		//	RoleRef: rbacv1.RoleRef{
+		//		APIGroup: "rbac.authorization.k8s.io",
+		//		Kind:     "ClusterRole",
+		//		Name:     "cluster-admin",
+		//	},
+		//	Subjects: []rbacv1.Subject{
+		//		{
+		//			Kind:      "ServiceAccount",
+		//			Name:      "default",
+		//			Namespace: InfrastructureNamespace,
+		//		},
+		//	},
+		//})
+		//if err != nil && !k8serrors.IsAlreadyExists(err) {
+		//	return nil, err
+		//}
 
 		// create dashboard service
 		_, err = c.clientset.CoreV1().Services(InfrastructureNamespace).Create(&corev1.Service{
@@ -706,7 +755,462 @@ func (c *InfraController) createDashboard(infra *infrav1alpha1.Infrastructure) (
 }
 
 func (c *InfraController) createLonghorn(infra *infrav1alpha1.Infrastructure) (*appsv1.Deployment, error) {
-	return nil, nil
+	err := c.ensureNamespaceExists(LonghornNamespace)
+	if err == nil || k8serrors.IsAlreadyExists(err) {
+
+		ownerReferences := []metav1.OwnerReference{
+			*metav1.NewControllerRef(infra, schema.GroupVersionKind{
+				Group:   infrav1alpha1.SchemeGroupVersion.Group,
+				Version: infrav1alpha1.SchemeGroupVersion.Version,
+				Kind:    "Infrastructure",
+			}),
+		}
+
+		ns, err := c.clientset.CoreV1().Namespaces().Get(LonghornNamespace, metav1.GetOptions{})
+		lnNs := ns.DeepCopy()
+		lnNs.OwnerReferences = ownerReferences
+		c.clientset.CoreV1().Namespaces().Update(lnNs)
+
+		// create longhorn serviceAccount
+		_, err = c.clientset.CoreV1().ServiceAccounts(LonghornNamespace).Create(&corev1.ServiceAccount{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "longhorn-service-account",
+				Namespace: LonghornNamespace,
+
+				OwnerReferences: ownerReferences,
+			},
+		})
+		if err != nil && !k8serrors.IsAlreadyExists(err) {
+			return nil, err
+		}
+
+		// create longhorn role
+		_, err = c.clientset.RbacV1().ClusterRoles().Create(&rbacv1.ClusterRole{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "longhorn-role",
+				OwnerReferences: []metav1.OwnerReference{
+					*metav1.NewControllerRef(infra, schema.GroupVersionKind{
+						Group:   infrav1alpha1.SchemeGroupVersion.Group,
+						Version: infrav1alpha1.SchemeGroupVersion.Version,
+						Kind:    "Infrastructure",
+					}),
+				},
+			},
+			Rules: []rbacv1.PolicyRule{
+				{
+					APIGroups: []string{"apiextensions.k8s.io"},
+					Resources: []string{"customresourcedefinitions"},
+					Verbs:     []string{"*"},
+				},
+				{
+					APIGroups: []string{""},
+					Resources: []string{"pods", "events", "persistentvolumes", "persistentvolumeclaims", "nodes", "proxy/nodes"},
+					Verbs:     []string{"*"},
+				},
+				{
+					APIGroups: []string{"apps"},
+					Resources: []string{"daemonsets"},
+					Verbs:     []string{"*"},
+				},
+				{
+					APIGroups: []string{"batch"},
+					Resources: []string{"jobs", "cronjobs"},
+					Verbs:     []string{"*"},
+				},
+				{
+					APIGroups: []string{"storage.k8s.io"},
+					Resources: []string{"storageclasses"},
+					Verbs:     []string{"*"},
+				},
+				{
+					APIGroups: []string{"longhorn.rancher.io"},
+					Resources: []string{"nodes"},
+					Verbs:     []string{"*"},
+				},
+				{
+					APIGroups: []string{"longhorn.rancher.io"},
+					Resources: []string{"volumes"},
+					Verbs:     []string{"*"},
+				},
+				{
+					APIGroups: []string{"longhorn.rancher.io"},
+					Resources: []string{"engines"},
+					Verbs:     []string{"*"},
+				},
+				{
+					APIGroups: []string{"longhorn.rancher.io"},
+					Resources: []string{"replicas"},
+					Verbs:     []string{"*"},
+				},
+				{
+					APIGroups: []string{"longhorn.rancher.io"},
+					Resources: []string{"settings"},
+					Verbs:     []string{"*"},
+				},
+			},
+		})
+		if err != nil && !k8serrors.IsAlreadyExists(err) {
+			return nil, err
+		}
+
+		// create longhorn roleBinding
+		_, err = c.clientset.RbacV1().ClusterRoleBindings().Create(&rbacv1.ClusterRoleBinding{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "longhorn-bind",
+				OwnerReferences: []metav1.OwnerReference{
+					*metav1.NewControllerRef(infra, schema.GroupVersionKind{
+						Group:   infrav1alpha1.SchemeGroupVersion.Group,
+						Version: infrav1alpha1.SchemeGroupVersion.Version,
+						Kind:    "Infrastructure",
+					}),
+				},
+			},
+			RoleRef: rbacv1.RoleRef{
+				APIGroup: "rbac.authorization.k8s.io",
+				Kind:     "ClusterRole",
+				Name:     "longhorn-role",
+			},
+			Subjects: []rbacv1.Subject{
+				{
+					Kind:      "ServiceAccount",
+					Name:      "longhorn-service-account",
+					Namespace: LonghornNamespace,
+				},
+			},
+		})
+		if err != nil && !k8serrors.IsAlreadyExists(err) {
+			return nil, err
+		}
+
+		// create longhorn daemonset
+		privileged := true
+		c.clientset.ExtensionsV1beta1().DaemonSets(LonghornNamespace).Create(&v1beta1.DaemonSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "longhorn-manager",
+				Labels: map[string]string{
+					"app": "longhorn-manager",
+				},
+				Namespace: LonghornNamespace,
+				OwnerReferences: []metav1.OwnerReference{
+					*metav1.NewControllerRef(infra, schema.GroupVersionKind{
+						Group:   infrav1alpha1.SchemeGroupVersion.Group,
+						Version: infrav1alpha1.SchemeGroupVersion.Version,
+						Kind:    "Infrastructure",
+					}),
+				},
+			},
+			Spec: v1beta1.DaemonSetSpec{
+				Selector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"app": "longhorn-manager",
+					},
+				},
+				Template: corev1.PodTemplateSpec{
+					ObjectMeta: metav1.ObjectMeta{
+						Labels: map[string]string{
+							"app": "longhorn-manager",
+						},
+					},
+					Spec: corev1.PodSpec{
+						Containers: []corev1.Container{
+							{
+								Name:            "longhorn-manager",
+								Image:           "rancher/longhorn-manager:b7f1b01",
+								ImagePullPolicy: "Always",
+								SecurityContext: &corev1.SecurityContext{
+									Privileged: &privileged,
+								},
+								Command: []string{
+									"longhorn-manager",
+									"-d",
+									"daemon",
+									"--engine-image",
+									"rancher/longhorn-engine:91aa784",
+									"--manager-image",
+									"rancher/longhorn-manager:b7f1b01",
+									"--service-account",
+									"longhorn-service-account",
+								},
+								Ports: []corev1.ContainerPort{
+									{
+										ContainerPort: 9500,
+									},
+								},
+
+								VolumeMounts: []corev1.VolumeMount{
+									{
+										Name:      "dev",
+										MountPath: "/host/dev/",
+									},
+									{
+										Name:      "proc",
+										MountPath: "/host/proc/",
+									},
+									{
+										Name:      "varrun",
+										MountPath: "/var/run/",
+									},
+									{
+										Name:      "longhorn",
+										MountPath: "/var/lib/rancher/longhorn/",
+									},
+								},
+								Env: []corev1.EnvVar{
+									{
+										Name: "POD_NAMESPACE",
+										ValueFrom: &corev1.EnvVarSource{
+											FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.namespace"},
+										},
+									},
+									{
+										Name: "POD_IP",
+										ValueFrom: &corev1.EnvVarSource{
+											FieldRef: &corev1.ObjectFieldSelector{FieldPath: "status.podIP"},
+										},
+									},
+									{
+										Name: "NODE_NAME",
+										ValueFrom: &corev1.EnvVarSource{
+											FieldRef: &corev1.ObjectFieldSelector{FieldPath: "spec.nodeName"},
+										},
+									},
+								},
+							},
+						},
+						Volumes: []corev1.Volume{
+							{
+								Name: "dev",
+								VolumeSource: corev1.VolumeSource{
+									HostPath: &corev1.HostPathVolumeSource{
+										Path: "/dev/",
+									},
+								},
+							},
+							{
+								Name: "proc",
+								VolumeSource: corev1.VolumeSource{
+									HostPath: &corev1.HostPathVolumeSource{
+										Path: "/proc/",
+									},
+								},
+							},
+							{
+								Name: "varrun",
+								VolumeSource: corev1.VolumeSource{
+									HostPath: &corev1.HostPathVolumeSource{
+										Path: "/var/run/",
+									},
+								},
+							},
+							{
+								Name: "longhorn",
+								VolumeSource: corev1.VolumeSource{
+									HostPath: &corev1.HostPathVolumeSource{
+										Path: "/var/lib/rancher/longhorn/",
+									},
+								},
+							},
+						},
+						ServiceAccountName: "longhorn-service-account",
+					},
+				},
+			},
+		})
+
+		// create longhorn backend service
+		_, err = c.clientset.CoreV1().Services(LonghornNamespace).Create(&corev1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "longhorn-backend",
+				Labels: map[string]string{
+					"app": "longhorn-manager",
+				},
+				Namespace: LonghornNamespace,
+				OwnerReferences: []metav1.OwnerReference{
+					*metav1.NewControllerRef(infra, schema.GroupVersionKind{
+						Group:   infrav1alpha1.SchemeGroupVersion.Group,
+						Version: infrav1alpha1.SchemeGroupVersion.Version,
+						Kind:    "Infrastructure",
+					}),
+				},
+			},
+			Spec: corev1.ServiceSpec{
+				Ports: []corev1.ServicePort{
+					{
+						Port:       9500,
+						TargetPort: intstr.FromInt(9500),
+					},
+				},
+				Selector: map[string]string{
+					"app": "longhorn-manager",
+				},
+			},
+		})
+		if err != nil && !k8serrors.IsAlreadyExists(err) {
+			return nil, err
+		}
+
+		// create longhorn ui service
+		_, err = c.clientset.CoreV1().Services(LonghornNamespace).Create(&corev1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "longhorn-frontend",
+				Labels: map[string]string{
+					"app": "longhorn-ui",
+				},
+				Namespace: LonghornNamespace,
+				OwnerReferences: []metav1.OwnerReference{
+					*metav1.NewControllerRef(infra, schema.GroupVersionKind{
+						Group:   infrav1alpha1.SchemeGroupVersion.Group,
+						Version: infrav1alpha1.SchemeGroupVersion.Version,
+						Kind:    "Infrastructure",
+					}),
+				},
+			},
+			Spec: corev1.ServiceSpec{
+				Ports: []corev1.ServicePort{
+					{
+						Port:       9091, //80,
+						TargetPort: intstr.FromInt(8000),
+					},
+				},
+				Selector: map[string]string{
+					"app": "longhorn-ui",
+				},
+			},
+		})
+		if err != nil && !k8serrors.IsAlreadyExists(err) {
+			return nil, err
+		}
+
+		// create longhorn driver deployment
+		_, err = c.clientset.AppsV1().Deployments(LonghornNamespace).Create(&appsv1.Deployment{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "longhorn-flexvolume-driver-deployer",
+				Namespace: LonghornNamespace,
+				OwnerReferences: []metav1.OwnerReference{
+					*metav1.NewControllerRef(infra, schema.GroupVersionKind{
+						Group:   infrav1alpha1.SchemeGroupVersion.Group,
+						Version: infrav1alpha1.SchemeGroupVersion.Version,
+						Kind:    "Infrastructure",
+					}),
+				},
+			},
+			Spec: appsv1.DeploymentSpec{
+				Replicas: infra.Spec.Replicas,
+				Selector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"app": "longhorn-flexvolume-driver-deployer",
+					},
+				},
+				Template: corev1.PodTemplateSpec{
+					ObjectMeta: metav1.ObjectMeta{
+						Labels: map[string]string{
+							"app": "longhorn-flexvolume-driver-deployer",
+						},
+					},
+					Spec: corev1.PodSpec{
+						Containers: []corev1.Container{
+							{
+								Name:            "longhorn-flexvolume-driver-deployer",
+								Image:           "rancher/longhorn-manager:fabeb53",
+								ImagePullPolicy: "Always",
+
+								Command: []string{
+									"longhorn-manager",
+									"-d",
+									"deploy-flexvolume-driver",
+									"--manager-image",
+									"rancher/longhorn-manager:fabeb53",
+								},
+
+								Env: []corev1.EnvVar{
+									{
+										Name: "POD_NAMESPACE",
+										ValueFrom: &corev1.EnvVarSource{
+											FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.namespace"},
+										},
+									},
+									{
+										Name: "NODE_NAME",
+										ValueFrom: &corev1.EnvVarSource{
+											FieldRef: &corev1.ObjectFieldSelector{FieldPath: "spec.nodeName"},
+										},
+									},
+									{
+										Name:  "FLEXVOLUME_DIR",
+										Value: "",
+									},
+								},
+							},
+						},
+						ServiceAccountName: "longhorn-service-account",
+					},
+				},
+			},
+		})
+		if err != nil && !k8serrors.IsAlreadyExists(err) {
+			return nil, err
+		}
+
+		//var replicas int32 = 1
+		replicas := int32(1)
+		// create longhorn ui deployment
+		deployment, err := c.clientset.AppsV1().Deployments(LonghornNamespace).Create(&appsv1.Deployment{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "longhorn-ui",
+				Labels: map[string]string{
+					"app": "longhorn-ui",
+				},
+				Namespace: LonghornNamespace,
+				OwnerReferences: []metav1.OwnerReference{
+					*metav1.NewControllerRef(infra, schema.GroupVersionKind{
+						Group:   infrav1alpha1.SchemeGroupVersion.Group,
+						Version: infrav1alpha1.SchemeGroupVersion.Version,
+						Kind:    "Infrastructure",
+					}),
+				},
+			},
+			Spec: appsv1.DeploymentSpec{
+				Replicas: &replicas,
+				Selector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"app": "longhorn-ui",
+					},
+				},
+				Template: corev1.PodTemplateSpec{
+					ObjectMeta: metav1.ObjectMeta{
+						Labels: map[string]string{
+							"app": "longhorn-ui",
+						},
+					},
+					Spec: corev1.PodSpec{
+						Containers: []corev1.Container{
+							{
+								Name:  "longhorn-ui",
+								Image: "rancher/longhorn-ui:6d74dfc",
+								Ports: []corev1.ContainerPort{
+									{
+										ContainerPort: 8000,
+									},
+								},
+								Env: []corev1.EnvVar{
+									{
+										Name:  "LONGHORN_MANAGER_IP",
+										Value: "http://longhorn-backend:9500",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		})
+		if err != nil && !k8serrors.IsAlreadyExists(err) {
+			return nil, err
+		}
+		return deployment, nil
+	}
+
+	return nil, err
 }
 
 func (c *InfraController) createRancherVM(infra *infrav1alpha1.Infrastructure) (*appsv1.Deployment, error) {
@@ -714,7 +1218,7 @@ func (c *InfraController) createRancherVM(infra *infrav1alpha1.Infrastructure) (
 }
 
 func (c *InfraController) updateDashboard(infra *infrav1alpha1.Infrastructure) (*appsv1.Deployment, error) {
-	err := c.ensureNamespaceExists()
+	err := c.ensureNamespaceExists(InfrastructureNamespace)
 	if err == nil || k8serrors.IsAlreadyExists(err) {
 		// update dashboard deployment
 		historyLimit := int32(1)
@@ -824,7 +1328,82 @@ func (c *InfraController) updateDashboard(infra *infrav1alpha1.Infrastructure) (
 }
 
 func (c *InfraController) updateLonghorn(infra *infrav1alpha1.Infrastructure) (*appsv1.Deployment, error) {
-	return nil, nil
+	err := c.ensureNamespaceExists(LonghornNamespace)
+	if err == nil || k8serrors.IsAlreadyExists(err) {
+		// create longhorn driver deployment
+		deployment, err := c.clientset.AppsV1().Deployments(LonghornNamespace).Create(&appsv1.Deployment{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "longhorn-flexvolume-driver-deployer",
+				Namespace: LonghornNamespace,
+				OwnerReferences: []metav1.OwnerReference{
+					*metav1.NewControllerRef(infra, schema.GroupVersionKind{
+						Group:   infrav1alpha1.SchemeGroupVersion.Group,
+						Version: infrav1alpha1.SchemeGroupVersion.Version,
+						Kind:    "Infrastructure",
+					}),
+				},
+			},
+			Spec: appsv1.DeploymentSpec{
+				Replicas: infra.Spec.Replicas,
+				Selector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"app": "longhorn-flexvolume-driver-deployer",
+					},
+				},
+				Template: corev1.PodTemplateSpec{
+					ObjectMeta: metav1.ObjectMeta{
+						Labels: map[string]string{
+							"app": "longhorn-flexvolume-driver-deployer",
+						},
+					},
+					Spec: corev1.PodSpec{
+						Containers: []corev1.Container{
+							{
+								Name:            "longhorn-flexvolume-driver-deployer",
+								Image:           "rancher/longhorn-manager:fabeb53",
+								ImagePullPolicy: "Always",
+
+								Command: []string{
+									"longhorn-manager",
+									"-d",
+									"deploy-flexvolume-driver",
+									"--manager-image",
+									"rancher/longhorn-manager:fabeb53",
+								},
+
+								Env: []corev1.EnvVar{
+									{
+										Name: "POD_NAMESPACE",
+										ValueFrom: &corev1.EnvVarSource{
+											FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.namespace"},
+										},
+									},
+									{
+										Name: "NODE_NAME",
+										ValueFrom: &corev1.EnvVarSource{
+											FieldRef: &corev1.ObjectFieldSelector{FieldPath: "spec.nodeName"},
+										},
+									},
+									{
+										Name:  "FLEXVOLUME_DIR",
+										Value: "",
+									},
+								},
+							},
+						},
+						ServiceAccountName: "longhorn-service-account",
+					},
+				},
+			},
+		})
+		if err != nil && !k8serrors.IsAlreadyExists(err) {
+			return nil, err
+		}
+
+		return deployment, nil
+	}
+
+	return nil, err
 }
 
 func (c *InfraController) updateRancherVM(infra *infrav1alpha1.Infrastructure) (*appsv1.Deployment, error) {

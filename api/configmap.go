@@ -12,7 +12,7 @@ func (s *Server) ConfigMapGet(w http.ResponseWriter, req *http.Request) error {
 	apiContext := api.GetApiContext(req)
 	//ns := mux.Vars(req)["ns"]
 	//cmId := mux.Vars(req)["id"]
-	cm, err := s.c.ConfigMapGet(backend.ConfigMapNs, backend.ConfigMapName)
+	cm, err := s.c.ConfigMapGet(backend.KubeSystemNamespace, backend.ConfigMapName)
 	if err != nil || cm == nil {
 		return errors.Wrap(err, "failed to read configmap")
 	}

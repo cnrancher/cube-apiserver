@@ -5,41 +5,51 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"github.com/cnrancher/cube-apiserver/util"
+	"github.com/cnrancher/cube-apiserver/controller"
 )
 
 var (
-	ConfigMapNs         = "kube-system"
-	ConfigMapName       = "cube-rancher"
-	Dashboard_Name      = "Dashboard_Name"
-	Dashboard_Namespace = "Dashboard_Namespace"
-	Dashboard_Icon      = "Dashboard_Icon"
-	Dashboard_Desc      = "Dashboard_Desc"
+	ConfigMapName = "cube-rancher"
+
+	DashboardName      = "DashboardName"
+	DashboardNamespace = "DashboardNamespace"
+	DashboardIcon      = "DashboardIcon"
+	DashboardDesc      = "DashboardDesc"
+
+	LanghornName      = "LanghornName"
+	LanghornNamespace = "LanghornNamespace"
+	LanghornIcon      = "LanghornIcon"
+	LanghornDesc      = "LanghornDesc"
 )
 
 func (c *ClientGenerator) ConfigMapDeploy() (*v1.ConfigMap, error) {
 	configMap := &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      ConfigMapName,
-			Namespace: ConfigMapNs,
+			Namespace: KubeSystemNamespace,
 			Labels: map[string]string{
 				"app": ConfigMapName,
 			}},
 
 		Data: map[string]string{
-			Dashboard_Name:      "kubernetes-dashboard",
-			Dashboard_Namespace: "kube-system",
-			Dashboard_Icon:      "",
-			Dashboard_Desc:      "Kubernetes Dashboard is a general purpose, web-based UI for Kubernetes clusters. It allows users to manage applications running in the cluster and troubleshoot them, as well as manage the cluster itself.",
+			DashboardName:      "kubernetes-dashboard",
+			DashboardNamespace: controller.InfrastructureNamespace,
+			DashboardIcon:      "",
+			DashboardDesc:      controller.DashboardDesc,
 
-			"info_langhorn":   "Longhorn is a distributed block storage system for Kubernetes powered by Rancher Labs.",
+			LanghornName:      "longhorn-ui",
+			LanghornNamespace: controller.LonghornNamespace,
+			LanghornIcon:      "",
+			LanghornDesc:      controller.LanghornDesc,
+
 			"info_rancher_vm": "info_rancher_vm",
 		},
 	}
 
-	cm, err := c.Clientset.CoreV1().ConfigMaps(ConfigMapNs).Create(configMap)
+	cm, err := c.Clientset.CoreV1().ConfigMaps(KubeSystemNamespace).Create(configMap)
 	if err != nil {
 		if k8serrors.IsAlreadyExists(err) {
-			return c.ConfigMapGet(ConfigMapNs, ConfigMapName)
+			return c.ConfigMapGet(KubeSystemNamespace, ConfigMapName)
 		}
 		return nil, err
 	}
