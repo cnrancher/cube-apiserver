@@ -8,6 +8,8 @@ import (
 	"syscall"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/pkg/errors"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func RegisterShutdownChannel(done chan struct{}) {
@@ -30,4 +32,15 @@ func JsonResponse(response interface{}, w http.ResponseWriter) {
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(json)
+}
+
+func HashPasswordString(password string) (string, error) {
+	if password == "" {
+		return "", errors.New("password not a string")
+	}
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return "", errors.Wrap(err, "problem encrypting password")
+	}
+	return string(hash), nil
 }
