@@ -28,4 +28,6 @@ type LocalConfigExpansion interface{}
 
 type PrincipalExpansion interface{}
 
+type TokenExpansion interface{}
+
 type UserExpansion interface{}

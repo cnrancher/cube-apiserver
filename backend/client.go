@@ -15,10 +15,10 @@ import (
 )
 
 type ClientGenerator struct {
-	Clientset            kubernetes.Clientset
-	Apiclientset         apics.Clientset
-	Infraclientset       infracs.Clientset
-	InformerFactory      informers.SharedInformerFactory
+	Clientset           kubernetes.Clientset
+	Apiclientset        apics.Clientset
+	Infraclientset      infracs.Clientset
+	InformerFactory     informers.SharedInformerFactory
 	CubeInformerFactory cubeinformers.SharedInformerFactory
 }
 
@@ -57,10 +57,10 @@ func NewClientGenerator(kubeConfig string) *ClientGenerator {
 	infraInformerFactory := cubeinformers.NewSharedInformerFactory(infraclientset, time.Second*30)
 
 	return &ClientGenerator{
-		Clientset:            *clientset,
-		Apiclientset:         *apiclientset,
-		Infraclientset:       *infraclientset,
-		InformerFactory:      informerFactory,
+		Clientset:           *clientset,
+		Apiclientset:        *apiclientset,
+		Infraclientset:      *infraclientset,
+		InformerFactory:     informerFactory,
 		CubeInformerFactory: infraInformerFactory,
 	}
 }

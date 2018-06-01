@@ -32,6 +32,7 @@ type CubeV1alpha1Interface interface {
 	InfrastructuresGetter
 	LocalConfigsGetter
 	PrincipalsGetter
+	TokensGetter
 	UsersGetter
 }
 
@@ -58,6 +59,10 @@ func (c *CubeV1alpha1Client) LocalConfigs(namespace string) LocalConfigInterface
 
 func (c *CubeV1alpha1Client) Principals(namespace string) PrincipalInterface {
 	return newPrincipals(c, namespace)
+}
+
+func (c *CubeV1alpha1Client) Tokens(namespace string) TokenInterface {
+	return newTokens(c, namespace)
 }
 
 func (c *CubeV1alpha1Client) Users(namespace string) UserInterface {

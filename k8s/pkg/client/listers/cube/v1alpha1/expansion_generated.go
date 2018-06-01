@@ -58,6 +58,14 @@ type PrincipalListerExpansion interface{}
 // PrincipalNamespaceLister.
 type PrincipalNamespaceListerExpansion interface{}
 
+// TokenListerExpansion allows custom methods to be added to
+// TokenLister.
+type TokenListerExpansion interface{}
+
+// TokenNamespaceListerExpansion allows custom methods to be added to
+// TokenNamespaceLister.
+type TokenNamespaceListerExpansion interface{}
+
 // UserListerExpansion allows custom methods to be added to
 // UserLister.
 type UserListerExpansion interface{}

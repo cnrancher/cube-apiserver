@@ -48,6 +48,10 @@ func (c *FakeCubeV1alpha1) Principals(namespace string) v1alpha1.PrincipalInterf
 	return &FakePrincipals{c, namespace}
 }
 
+func (c *FakeCubeV1alpha1) Tokens(namespace string) v1alpha1.TokenInterface {
+	return &FakeTokens{c, namespace}
+}
+
 func (c *FakeCubeV1alpha1) Users(namespace string) v1alpha1.UserInterface {
 	return &FakeUsers{c, namespace}
 }

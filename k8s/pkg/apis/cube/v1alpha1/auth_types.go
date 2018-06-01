@@ -83,6 +83,28 @@ type LocalConfig struct {
 	AuthConfig        `json:",inline" mapstructure:",squash"`
 }
 
+// +genclient
+// +genclient:noStatus
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +resource:path=token
+type Token struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Token           string            `json:"token"`
+	UserPrincipal   Principal         `json:"userPrincipal"`
+	GroupPrincipals []Principal       `json:"groupPrincipals"`
+	ProviderInfo    map[string]string `json:"providerInfo,omitempty"`
+	UserID          string            `json:"userId"`
+	AuthProvider    string            `json:"authProvider"`
+	TTLMillis       int64             `json:"ttl"`
+	LastUpdateTime  string            `json:"lastUpdateTime"`
+	IsDerived       bool              `json:"isDerived"`
+	Description     string            `json:"description"`
+	Expired         bool              `json:"expired"`
+	ExpiresAt       string            `json:"expiresAt"`
+}
+
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +resource:path=users
 type UserList struct {
@@ -121,4 +143,12 @@ type LocalConfigList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata"`
 	Items           []LocalConfig `json:"items"`
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +resource:path=tokens
+type TokenList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata"`
+	Items           []Token `json:"items"`
 }

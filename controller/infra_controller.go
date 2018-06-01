@@ -392,7 +392,7 @@ func (c *InfraController) bundleUpdate(infra *infrav1alpha1.Infrastructure) (*ap
 	case "RancherVM":
 		return c.updateRancherVM(infra)
 	}
-	return nil, errors.New("error bundle create: infrastructure type " + infra.Spec.InfraKind + " is invalid")
+	return nil, errors.New("error bundle update: infrastructure type " + infra.Spec.InfraKind + " is invalid")
 }
 
 // detectService will check the Infrastructure service weather healthy or not.

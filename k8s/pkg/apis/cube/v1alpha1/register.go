@@ -29,7 +29,7 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&LocalConfig{},
 		&InfrastructureList{},
 		&UserList{},
-		&Principal{},
+		&PrincipalList{},
 		&GroupList{},
 		&GroupMemberList{},
 		&LocalConfigList{},

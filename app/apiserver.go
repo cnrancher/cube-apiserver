@@ -58,6 +58,7 @@ func startAPIServer(c *cli.Context) error {
 
 	// generate & deploy customer resources
 	clientGenerator.UserCRDDeploy()
+	clientGenerator.PrincipalCRDDeploy()
 	clientGenerator.InfrastructureCRDDeploy()
 
 	done := make(chan struct{})

@@ -10,29 +10,22 @@ import (
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const (
-	InfraPlural   = "infrastructures"
-	InfraGroup    = "cube.rancher.io"
-	InfraVersion  = "v1alpha1"
-	InfraFullName = InfraPlural + "." + InfraGroup
-)
-
 func (c *ClientGenerator) InfrastructureCRDDeploy() error {
 	crd := &v1beta1.CustomResourceDefinition{
-		ObjectMeta: metaV1.ObjectMeta{Name: InfraFullName},
+		ObjectMeta: metaV1.ObjectMeta{Name: "infrastructures.cube.rancher.io"},
 		Spec: v1beta1.CustomResourceDefinitionSpec{
-			Group:   InfraGroup,
-			Version: InfraVersion,
+			Group:   "cube.rancher.io",
+			Version: "v1alpha1",
 			Scope:   v1beta1.NamespaceScoped,
 			Names: v1beta1.CustomResourceDefinitionNames{
-				Plural: InfraPlural,
+				Plural: "infrastructures",
 				Kind:   reflect.TypeOf(v1alpha1.Infrastructure{}).Name(),
 			},
 		},
 	}
 
 	_, err := c.Apiclientset.ApiextensionsV1beta1().CustomResourceDefinitions().Create(crd)
-	if err != nil && apierrors.IsAlreadyExists(err) {
+	if err == nil || (err != nil && apierrors.IsAlreadyExists(err)) {
 		return nil
 	}
 

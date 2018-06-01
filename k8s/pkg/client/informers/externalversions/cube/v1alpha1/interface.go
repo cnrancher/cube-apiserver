@@ -34,6 +34,8 @@ type Interface interface {
 	LocalConfigs() LocalConfigInformer
 	// Principals returns a PrincipalInformer.
 	Principals() PrincipalInformer
+	// Tokens returns a TokenInformer.
+	Tokens() TokenInformer
 	// Users returns a UserInformer.
 	Users() UserInformer
 }
@@ -72,6 +74,11 @@ func (v *version) LocalConfigs() LocalConfigInformer {
 // Principals returns a PrincipalInformer.
 func (v *version) Principals() PrincipalInformer {
 	return &principalInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// Tokens returns a TokenInformer.
+func (v *version) Tokens() TokenInformer {
+	return &tokenInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // Users returns a UserInformer.
