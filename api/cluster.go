@@ -12,11 +12,11 @@ func (s *Server) ClusterList(w http.ResponseWriter, req *http.Request) error {
 
 	resources, err := s.c.ClusterResources()
 	if err != nil || resources == nil {
-		return errors.Wrap(err, "fail to read clusters resources")
+		return errors.Wrap(err, "RancherCUBE: fail to read clusters resources")
 	}
 	componentStatuses, err := s.c.ClusterComponentStatuses()
 	if err != nil || componentStatuses == nil {
-		return errors.Wrap(err, "fail to read clusters component statuses")
+		return errors.Wrap(err, "RancherCUBE: fail to read clusters component statuses")
 	}
 
 	apiContext.Write(toClusterCollection(resources, componentStatuses))

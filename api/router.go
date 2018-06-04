@@ -62,11 +62,11 @@ func HandleError(s *client.Schemas, t HandleFuncWithError) http.Handler {
 			if !apierrors.IsConflict(errors.Cause(err)) {
 				break
 			}
-			logrus.Warnf("Retry API call due to conflict")
+			logrus.Warnf("RancherCUBE: retry API call due to conflict")
 			time.Sleep(RetryInterval)
 		}
 		if err != nil {
-			logrus.Warnf("HTTP handling error %v", err)
+			logrus.Warnf("RancherCUBE: http handling error %v", err)
 			apiContext := api.GetApiContext(req)
 			apiContext.WriteErr(err)
 		}

@@ -13,7 +13,7 @@ func (s *Server) NodeList(w http.ResponseWriter, req *http.Request) error {
 
 	nodes, err := s.c.ClusterNodes()
 	if err != nil || nodes == nil {
-		return errors.Wrap(err, "fail to read nodes")
+		return errors.Wrap(err, "RancherCUBE: fail to read nodes")
 	}
 	apiContext.Write(toNodeCollection(nodes))
 	return nil
@@ -25,7 +25,7 @@ func (s *Server) NodeGet(w http.ResponseWriter, req *http.Request) error {
 
 	node, err := s.c.ClusterNode(nodeId)
 	if err != nil || node == nil {
-		return errors.Wrap(err, "fail to read node")
+		return errors.Wrap(err, "RancherCUBE: fail to read node")
 	}
 	apiContext.Write(toNodeResource(node))
 	return nil
