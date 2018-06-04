@@ -76,14 +76,13 @@ func CreateLoginToken(clientGenerator *backend.ClientGenerator, signKey *rsa.Pri
 func NewLoginToken(clientGenerator *backend.ClientGenerator, userID string, userPrincipal v1alpha1.Principal, providerInfo map[string]string, ttl int64, description string, signKey *rsa.PrivateKey) (v1alpha1.Token, error) {
 	token := &v1alpha1.Token{
 		UserPrincipal: userPrincipal,
-		// will create jwt token
-		IsDerived:    true,
-		TTLMillis:    ttl,
-		ExpiresAt:    "",
-		UserID:       userID,
-		AuthProvider: util.GetAuthProviderName(userPrincipal.Name),
-		ProviderInfo: providerInfo,
-		Description:  description,
+		IsDerived:     true,
+		TTLMillis:     ttl,
+		ExpiresAt:     "",
+		UserID:        userID,
+		AuthProvider:  util.GetAuthProviderName(userPrincipal.Name),
+		ProviderInfo:  providerInfo,
+		Description:   description,
 	}
 
 	return CreateOrUpdateToken(clientGenerator, token, signKey)
@@ -111,8 +110,7 @@ func CreateOrUpdateToken(clientGenerator *backend.ClientGenerator, token *v1alph
 		return v1alpha1.Token{}, err
 	}
 
-	// TODO: need use indexer
-	token, err = clientGenerator.Infraclientset.CubeV1alpha1().Tokens(token.UserPrincipal.Namespace).Get(createdToken.Name, util.GetOptions)
+	token, err = common.SearchToken(createdToken.Name, createdToken.AuthProvider)
 	if err != nil {
 		return v1alpha1.Token{}, err
 	}

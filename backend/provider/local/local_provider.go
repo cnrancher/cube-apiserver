@@ -25,6 +25,8 @@ const (
 type Provider struct {
 	userLister      v1alpha1lister.UserLister
 	userIndexer     cache.Indexer
+	tokenLister     v1alpha1lister.TokenLister
+	tokenIndexer    cache.Indexer
 	clientGenerator *backend.ClientGenerator
 }
 
@@ -33,9 +35,15 @@ func Configure(clientGenerator *backend.ClientGenerator) provider.AuthProvider {
 	indexers := map[string]cache.IndexFunc{controller.UserByUsernameIndex: controller.UserByUsername, controller.UserSearchIndex: controller.UserSearchIndexer}
 	informer.AddIndexers(indexers)
 
+	tokenInformer := clientGenerator.CubeInformerFactory.Cube().V1alpha1().Tokens().Informer()
+	tokenIndexers := map[string]cache.IndexFunc{controller.TokenByNameIndex: controller.TokenByName}
+	tokenInformer.AddIndexers(tokenIndexers)
+
 	return &Provider{
 		userLister:      clientGenerator.CubeInformerFactory.Cube().V1alpha1().Users().Lister(),
 		userIndexer:     informer.GetIndexer(),
+		tokenLister:     clientGenerator.CubeInformerFactory.Cube().V1alpha1().Tokens().Lister(),
+		tokenIndexer:    tokenInformer.GetIndexer(),
 		clientGenerator: clientGenerator,
 	}
 }
@@ -155,6 +163,21 @@ func (p *Provider) CheckAccess(userPrincipal v1alpha1.Principal) (bool, error) {
 	return false, errors.Errorf("RancherCUBE: no allowed principalIDs")
 }
 
+func (p *Provider) SearchToken(tokenName, providerName string) (*v1alpha1.Token, error) {
+	objs, err := p.tokenIndexer.ByIndex(controller.TokenByNameIndex, tokenName)
+	if len(objs) == 0 {
+		return &v1alpha1.Token{}, errors.Wrap(err, "RancherCUBE: authentication failed")
+	}
+	if len(objs) > 1 {
+		return &v1alpha1.Token{}, fmt.Errorf("RancherCUBE: found more than one token with name %v", tokenName)
+	}
+	user, ok := objs[0].(*v1alpha1.Token)
+	if !ok {
+		return &v1alpha1.Token{}, fmt.Errorf("RancherCUBE: fatal error. %v is not a token", objs[0])
+	}
+	return user, nil
+}
+
 func (p *Provider) listAllUsers(searchKey string) ([]*v1alpha1.User, error) {
 	var localUsers []*v1alpha1.User
 
@@ -193,7 +216,6 @@ func (p *Provider) listUsersByIndex(searchKey string) ([]*v1alpha1.User, error) 
 	}
 
 	return localUsers, err
-
 }
 
 func getLocalPrincipalID(user *v1alpha1.User) string {

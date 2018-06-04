@@ -22,4 +22,5 @@ type AuthProvider interface {
 	AuthenticateUser(input interface{}, providerName string) (v1alpha1.Principal, map[string]string, error)
 	SearchPrincipals(name, principalType string, myToken v1alpha1.Token) ([]v1alpha1.Principal, error)
 	GetPrincipal(principalID string, token v1alpha1.Token) (v1alpha1.Principal, error)
+	SearchToken(tokenName, providerName string) (*v1alpha1.Token, error)
 }

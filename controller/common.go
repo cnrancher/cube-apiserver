@@ -25,6 +25,7 @@ const (
 	UserByUsernameIndex        = "auth.user.cube.rancher.io/user-username-index"
 	UserSearchIndex            = "auth.user.cube.rancher.io/user-search-index"
 	PrincipalByIdIndex         = "auth.user.cube.rancher.io/principal-id-index"
+	TokenByNameIndex           = "auth.user.cube.rancher.io/token-name-index"
 	UserIDLabel                = "auth.user.cube.rancher.io/token-user-id"
 )
 
@@ -78,6 +79,14 @@ func PrincipalById(obj interface{}) ([]string, error) {
 		return []string{}, nil
 	}
 	return []string{principal.Name}, nil
+}
+
+func TokenByName(obj interface{}) ([]string, error) {
+	token, ok := obj.(*userv1alpha1.Token)
+	if !ok {
+		return []string{}, nil
+	}
+	return []string{token.Name}, nil
 }
 
 func ToPrincipal(principalType, displayName, loginName, namespace, id string, token *userv1alpha1.Token) userv1alpha1.Principal {

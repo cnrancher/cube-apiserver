@@ -69,3 +69,11 @@ func SearchPrincipals(name, principalType string, myToken v1alpha1.Token) ([]v1a
 	}
 	return principals, err
 }
+
+func SearchToken(tokenName, providerName string) (*v1alpha1.Token, error) {
+	token, err := providers[providerName].SearchToken(tokenName, providerName)
+	if err != nil {
+		return token, err
+	}
+	return token, nil
+}
