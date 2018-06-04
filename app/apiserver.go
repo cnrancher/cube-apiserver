@@ -7,6 +7,7 @@ import (
 
 	"github.com/cnrancher/cube-apiserver/api"
 	"github.com/cnrancher/cube-apiserver/backend"
+	"github.com/cnrancher/cube-apiserver/backend/provider/common"
 	"github.com/cnrancher/cube-apiserver/controller"
 	"github.com/cnrancher/cube-apiserver/util"
 
@@ -58,7 +59,6 @@ func startAPIServer(c *cli.Context) error {
 
 	// generate & deploy customer resources
 	clientGenerator.UserCRDDeploy()
-	clientGenerator.PrincipalCRDDeploy()
 	clientGenerator.InfrastructureCRDDeploy()
 
 	done := make(chan struct{})
@@ -71,13 +71,14 @@ func startAPIServer(c *cli.Context) error {
 
 	go func() {
 		if err := infraController.Run(2, done); err != nil {
-			glog.Fatalf("Error running infrastructure controller: %s", err.Error())
+			glog.Fatalf("RancherCUBE: error running infrastructure controller: %s", err.Error())
 		}
 	}()
 
 	go func() {
+		common.Configure(clientGenerator)
 		if err := userController.Run(2, done); err != nil {
-			glog.Fatalf("Error running user controller: %s", err.Error())
+			glog.Fatalf("RancherCUBE: error running user controller: %s", err.Error())
 		}
 	}()
 

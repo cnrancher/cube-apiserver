@@ -2,33 +2,34 @@ package api
 
 import (
 	"net/http"
-	"time"
 
+	"github.com/cnrancher/cube-apiserver/backend/unsecure"
 	"github.com/cnrancher/cube-apiserver/util"
+)
 
-	"github.com/dgrijalva/jwt-go"
+const (
+	CookieName = "RC_SESS"
 )
 
 func (s *Server) Login(w http.ResponseWriter, req *http.Request) error {
-	s.c.Login()
-
-	token := jwt.New(jwt.SigningMethodRS256)
-	claims := make(jwt.MapClaims)
-	claims["exp"] = time.Now().Add(time.Second * time.Duration(20)).Unix()
-	claims["iat"] = time.Now().Unix()
-	token.Claims = claims
-
-	tokenStr, err := token.SignedString(JwtSignKey)
+	token, responseType, err := unsecure.CreateLoginToken(s.c, JwtSignKey, req)
 	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return err
 	}
 
-	response := &Token{
-		Name:      "zhaozy",
-		LoginName: "zhaozy",
-		Token:     tokenStr,
+	if responseType == "cookie" {
+		tokenCookie := &http.Cookie{
+			Name:     CookieName,
+			Value:    token.ObjectMeta.Name + ":" + token.Token,
+			Secure:   true,
+			Path:     "/",
+			HttpOnly: true,
+		}
+		http.SetCookie(w, tokenCookie)
+	} else {
+		util.JsonResponse(token, http.StatusCreated, w)
 	}
 
-	util.JsonResponse(response, w)
 	return nil
 }
