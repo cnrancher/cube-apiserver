@@ -2,7 +2,6 @@ package controller
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	userv1alpha1 "github.com/cnrancher/cube-apiserver/k8s/pkg/apis/cube/v1alpha1"
@@ -61,9 +60,9 @@ func NewUserController(clientset kubernetes.Interface,
 
 	// add index for userInformer
 	userIndexers := map[string]cache.IndexFunc{
-		UserByPrincipalIndex: userByPrincipal,
-		UserByUsernameIndex:  userByUsername,
-		UserSearchIndex:      userSearchIndexer,
+		UserByPrincipalIndex: UserByPrincipal,
+		UserByUsernameIndex:  UserByUsername,
+		UserSearchIndex:      UserSearchIndexer,
 	}
 
 	if err := userInformer.Informer().AddIndexers(userIndexers); err != nil {
@@ -76,7 +75,7 @@ func NewUserController(clientset kubernetes.Interface,
 
 	// add index for userInformer
 	principalIndexers := map[string]cache.IndexFunc{
-		PrincipalByIdIndex: principalById,
+		PrincipalByIdIndex: PrincipalById,
 	}
 
 	if err := principalInformer.Informer().AddIndexers(principalIndexers); err != nil {
@@ -256,7 +255,7 @@ func (c *UserController) syncHandler(key string) error {
 		return nil
 	}
 
-	principalLogic := toPrincipal("user", user.DisplayName, user.Username, user.Namespace, getLocalPrincipalID(user), nil)
+	principalLogic := ToPrincipal("user", user.DisplayName, user.Username, user.Namespace, GetLocalPrincipalID(user), nil)
 
 	principal, err := c.principalLister.Principals(user.Namespace).Get(principalLogic.Name)
 
@@ -384,19 +383,23 @@ func (c *UserController) updateUser(user *userv1alpha1.User, principal *userv1al
 
 // bundleCreate will create all User needed such as(Principal, Rbac, Pv, Pvc, Deployment, etc...)
 func (c *UserController) bundleCreate(user *userv1alpha1.User, principleLogic *userv1alpha1.Principal) (*userv1alpha1.Principal, error) {
-	principleLogic.OwnerReferences = []metav1.OwnerReference{
-		*metav1.NewControllerRef(user, schema.GroupVersionKind{
-			Group:   userv1alpha1.SchemeGroupVersion.Group,
-			Version: userv1alpha1.SchemeGroupVersion.Version,
-			Kind:    "User",
-		}),
-	}
-	principal, err := c.userclientset.CubeV1alpha1().Principals(user.Namespace).Create(principleLogic)
-	if err != nil && !k8serrors.IsAlreadyExists(err) {
-		return nil, err
+	err := c.ensureNamespaceExists()
+	if err == nil || k8serrors.IsAlreadyExists(err) {
+		principleLogic.OwnerReferences = []metav1.OwnerReference{
+			*metav1.NewControllerRef(user, schema.GroupVersionKind{
+				Group:   userv1alpha1.SchemeGroupVersion.Group,
+				Version: userv1alpha1.SchemeGroupVersion.Version,
+				Kind:    "User",
+			}),
+		}
+		principal, err := c.userclientset.CubeV1alpha1().Principals(user.Namespace).Create(principleLogic)
+		if err != nil && !k8serrors.IsAlreadyExists(err) {
+			return nil, err
+		}
+		return principal, nil
 	}
 
-	return principal, nil
+	return nil, err
 }
 
 // bundleUpdate will update all User needed such as(Principal, Rbac, Pv, Pvc, Deployment, etc...)
@@ -424,126 +427,4 @@ func (c *UserController) ensureNamespaceExists() error {
 		},
 	})
 	return err
-}
-
-func toPrincipal(principalType, displayName, loginName, namespace, id string, token *userv1alpha1.Token) userv1alpha1.Principal {
-	if displayName == "" {
-		displayName = loginName
-	}
-
-	princ := userv1alpha1.Principal{
-		ObjectMeta:  metav1.ObjectMeta{Name: id, Namespace: namespace},
-		DisplayName: displayName,
-		LoginName:   loginName,
-		Provider:    "local",
-		Me:          false,
-	}
-
-	if principalType == "user" {
-		princ.PrincipalType = "user"
-		if token != nil {
-			princ.Me = isThisUserMe(token.UserPrincipal, princ)
-		}
-	} else {
-		princ.PrincipalType = "group"
-		if token != nil {
-			princ.MemberOf = isMemberOf(token.GroupPrincipals, princ)
-		}
-	}
-
-	return princ
-}
-
-func getLocalPrincipalID(user *userv1alpha1.User) string {
-	var principalID string
-	for _, p := range user.PrincipalIDs {
-		if strings.HasPrefix(p, "local.") {
-			principalID = p
-		}
-	}
-	if principalID == "" {
-		principalID = "local." + user.Namespace + "." + user.Name
-	}
-	return principalID
-}
-
-func isThisUserMe(me userv1alpha1.Principal, other userv1alpha1.Principal) bool {
-
-	if me.ObjectMeta.Name == other.ObjectMeta.Name && me.LoginName == other.LoginName && me.PrincipalType == other.PrincipalType {
-		return true
-	}
-	return false
-}
-
-func isMemberOf(myGroups []userv1alpha1.Principal, other userv1alpha1.Principal) bool {
-
-	for _, mygroup := range myGroups {
-		if mygroup.ObjectMeta.Name == other.ObjectMeta.Name && mygroup.PrincipalType == other.PrincipalType {
-			return true
-		}
-	}
-	return false
-}
-
-func userByPrincipal(obj interface{}) ([]string, error) {
-	u, ok := obj.(*userv1alpha1.User)
-	if !ok {
-		return []string{}, nil
-	}
-
-	return u.PrincipalIDs, nil
-}
-
-func userByUsername(obj interface{}) ([]string, error) {
-	user, ok := obj.(*userv1alpha1.User)
-	if !ok {
-		return []string{}, nil
-	}
-	return []string{user.Username}, nil
-}
-
-func userSearchIndexer(obj interface{}) ([]string, error) {
-	user, ok := obj.(*userv1alpha1.User)
-	if !ok {
-		return []string{}, nil
-	}
-	var fieldIndexes []string
-
-	fieldIndexes = append(fieldIndexes, indexField(user.Username, minOf(len(user.Username), searchIndexDefaultLen))...)
-	fieldIndexes = append(fieldIndexes, indexField(user.DisplayName, minOf(len(user.DisplayName), searchIndexDefaultLen))...)
-	fieldIndexes = append(fieldIndexes, indexField(user.ObjectMeta.Name, minOf(len(user.ObjectMeta.Name), searchIndexDefaultLen))...)
-
-	return fieldIndexes, nil
-}
-
-func principalById(obj interface{}) ([]string, error) {
-	principal, ok := obj.(*userv1alpha1.Principal)
-	if !ok {
-		return []string{}, nil
-	}
-	return []string{principal.Name}, nil
-}
-
-func minOf(length int, defaultLen int) int {
-	if length < defaultLen {
-		return length
-	}
-	return defaultLen
-}
-
-func indexField(field string, maxindex int) []string {
-	var fieldIndexes []string
-	for i := 2; i <= maxindex; i++ {
-		fieldIndexes = append(fieldIndexes, field[0:i])
-	}
-	return fieldIndexes
-}
-
-func matchPrincipalId(principalIds []string, id string) bool {
-	for _, val := range principalIds {
-		if val == id {
-			return true
-		}
-	}
-	return false
 }
