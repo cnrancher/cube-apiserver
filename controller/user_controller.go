@@ -529,6 +529,7 @@ func (c *UserController) createPrincipal(user *userv1alpha1.User, principalLogic
 				Kind:    "User",
 			}),
 		}
+
 		principal, err := c.userclientset.CubeV1alpha1().Principals(user.Namespace).Create(principalLogic)
 		if err != nil && !k8serrors.IsAlreadyExists(err) {
 			return nil, err
