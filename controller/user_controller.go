@@ -38,6 +38,10 @@ type UserController struct {
 	userInformer cache.SharedIndexInformer
 	userSynced   cache.InformerSynced
 
+	tokenLister   userlisters.TokenLister
+	tokenInformer cache.SharedIndexInformer
+	tokenSynced   cache.InformerSynced
+
 	principalLister   userlisters.PrincipalLister
 	principalInformer cache.SharedIndexInformer
 	principalSynced   cache.InformerSynced
@@ -78,6 +82,20 @@ func NewUserController(clientset kubernetes.Interface,
 	}
 
 	if err := userInformer.Informer().AddIndexers(userIndexers); err != nil {
+		return nil
+	}
+
+	// obtain references to shared index informers for the Token
+	// types.
+	tokenInformer := userInformerFactory.Cube().V1alpha1().Tokens()
+
+	// add index for userInformer
+	tokenIndexers := map[string]cache.IndexFunc{
+		TokenByNameIndex: TokenByName,
+		TokenByKeyIndex:  TokenByKey,
+	}
+
+	if err := tokenInformer.Informer().AddIndexers(tokenIndexers); err != nil {
 		return nil
 	}
 
@@ -134,6 +152,9 @@ func NewUserController(clientset kubernetes.Interface,
 		userLister:        userInformer.Lister(),
 		userInformer:      userInformer.Informer(),
 		userSynced:        userInformer.Informer().HasSynced,
+		tokenLister:       tokenInformer.Lister(),
+		tokenInformer:     tokenInformer.Informer(),
+		tokenSynced:       tokenInformer.Informer().HasSynced,
 		principalLister:   principalInformer.Lister(),
 		principalInformer: principalInformer.Informer(),
 		principalSynced:   principalInformer.Informer().HasSynced,
@@ -146,6 +167,7 @@ func NewUserController(clientset kubernetes.Interface,
 		workqueue:         workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "Users"),
 		recorder:          recorder,
 	}
+
 	glog.Info("Setting up event handlers")
 
 	// Set up an event handler for when User resources change
@@ -156,6 +178,22 @@ func NewUserController(clientset kubernetes.Interface,
 		},
 	})
 
+	// Set up an event handler for when Token resources change
+	tokenInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc: controller.handleObject,
+		UpdateFunc: func(old, new interface{}) {
+			newToken := new.(*userv1alpha1.Token)
+			oldToken := old.(*userv1alpha1.Token)
+			if newToken.ResourceVersion == oldToken.ResourceVersion {
+				// Periodic resync will send update events for all known Principals.
+				// Two different versions of the same Deployment will always have different RVs.
+				return
+			}
+			controller.handleObject(new)
+		},
+		DeleteFunc: controller.handleObject,
+	})
+
 	// Set up an event handler for when Principal resources change
 	principalInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: controller.handleObject,
@@ -163,7 +201,7 @@ func NewUserController(clientset kubernetes.Interface,
 			newPrincipal := new.(*userv1alpha1.Principal)
 			oldPrincipal := old.(*userv1alpha1.Principal)
 			if newPrincipal.ResourceVersion == oldPrincipal.ResourceVersion {
-				// Periodic resync will send update events for all known Deployments.
+				// Periodic resync will send update events for all known Principals.
 				// Two different versions of the same Deployment will always have different RVs.
 				return
 			}
@@ -179,7 +217,7 @@ func NewUserController(clientset kubernetes.Interface,
 			newCrb := new.(*rbacv1.ClusterRoleBinding)
 			oldCrb := old.(*rbacv1.ClusterRoleBinding)
 			if newCrb.ResourceVersion == oldCrb.ResourceVersion {
-				// Periodic resync will send update events for all known Deployments.
+				// Periodic resync will send update events for all known ClusterRoleBindings.
 				// Two different versions of the same Deployment will always have different RVs.
 				return
 			}
@@ -195,7 +233,7 @@ func NewUserController(clientset kubernetes.Interface,
 			newCr := new.(*rbacv1.ClusterRole)
 			oldCr := old.(*rbacv1.ClusterRole)
 			if newCr.ResourceVersion == oldCr.ResourceVersion {
-				// Periodic resync will send update events for all known Deployments.
+				// Periodic resync will send update events for all known ClusterRoles.
 				// Two different versions of the same Deployment will always have different RVs.
 				return
 			}
@@ -220,7 +258,7 @@ func (c *UserController) Run(threadiness int, stopCh <-chan struct{}) error {
 
 	// Wait for the caches to be synced before starting workers
 	glog.Info("Waiting for informer caches to sync")
-	if ok := cache.WaitForCacheSync(stopCh, c.userSynced, c.principalSynced, c.crbSynced, c.crSynced); !ok {
+	if ok := cache.WaitForCacheSync(stopCh, c.userSynced, c.tokenSynced, c.principalSynced, c.crbSynced, c.crSynced); !ok {
 		return fmt.Errorf("failed to wait for caches to sync")
 	}
 

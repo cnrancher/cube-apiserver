@@ -33,6 +33,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&GroupList{},
 		&GroupMemberList{},
 		&LocalConfigList{},
+		&Token{},
+		&TokenList{},
 	)
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
 	return nil

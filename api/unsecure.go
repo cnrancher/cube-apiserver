@@ -7,10 +7,6 @@ import (
 	"github.com/cnrancher/cube-apiserver/util"
 )
 
-const (
-	CookieName = "RC_SESS"
-)
-
 func (s *Server) Login(w http.ResponseWriter, req *http.Request) error {
 	token, responseType, err := unsecure.CreateLoginToken(s.c, JwtSignKey, req)
 	if err != nil {
@@ -19,17 +15,27 @@ func (s *Server) Login(w http.ResponseWriter, req *http.Request) error {
 	}
 
 	if responseType == "cookie" {
+		isSecure := false
+		if req.URL.Scheme == "https" {
+			isSecure = true
+		}
 		tokenCookie := &http.Cookie{
-			Name:     CookieName,
+			Name:     util.CookieName,
 			Value:    token.ObjectMeta.Name + ":" + token.Token,
-			Secure:   true,
+			Secure:   isSecure,
 			Path:     "/",
 			HttpOnly: true,
 		}
+		w.WriteHeader(http.StatusCreated)
 		http.SetCookie(w, tokenCookie)
 	} else {
+		token.Token = token.ObjectMeta.Name + ":" + token.Token
 		util.JsonResponse(token, http.StatusCreated, w)
 	}
 
+	return nil
+}
+
+func (s *Server) Logout(w http.ResponseWriter, req *http.Request) error {
 	return nil
 }

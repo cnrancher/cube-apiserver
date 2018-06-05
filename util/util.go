@@ -9,10 +9,10 @@ import (
 	"strings"
 	"syscall"
 	"time"
+	"encoding/base64"
 
 	"github.com/cnrancher/cube-apiserver/k8s/pkg/apis/cube/v1alpha1"
 
-	"encoding/base64"
 	"github.com/Sirupsen/logrus"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/pkg/errors"
@@ -124,6 +124,14 @@ func HashPasswordString(password string) (string, error) {
 	return string(hash), nil
 }
 
+func SplitTokenParts(tokenID string) (string, string) {
+	parts := strings.Split(tokenID, ":")
+	if len(parts) != 2 {
+		return parts[0], ""
+	}
+	return parts[0], parts[1]
+}
+
 func GetTokenAuthFromRequest(req *http.Request) string {
 	var tokenAuthValue string
 	authHeader := req.Header.Get(AuthHeaderName)
@@ -140,7 +148,7 @@ func GetTokenAuthFromRequest(req *http.Request) string {
 				base64Value := strings.TrimSpace(parts[1])
 				data, err := base64.URLEncoding.DecodeString(base64Value)
 				if err != nil {
-					logrus.Errorf("Error %v parsing %v header", err, AuthHeaderName)
+					logrus.Errorf("RancherCUBE: error %v parsing %v header", err, AuthHeaderName)
 				} else {
 					tokenAuthValue = string(data)
 				}
@@ -148,20 +156,11 @@ func GetTokenAuthFromRequest(req *http.Request) string {
 		}
 	} else {
 		cookie, err := req.Cookie(CookieName)
-		if err == nil {
+		if err != nil {
+			logrus.Errorf("RancherCUBE: error %v get cookie %s", err, CookieName)
+		} else {
 			tokenAuthValue = cookie.Value
 		}
 	}
 	return tokenAuthValue
-}
-
-func TokenObtainMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-	token := GetTokenAuthFromRequest(r)
-
-	// If there was an error, do not call next.
-	if token != "" && next != nil {
-		r.Header.Set("Authorization", token)
-		// TODO: impersonate user header
-		next(w, r)
-	}
 }

@@ -6,6 +6,9 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/cnrancher/cube-apiserver/backend"
+	"github.com/cnrancher/cube-apiserver/util"
+
 	"github.com/Sirupsen/logrus"
 	"github.com/auth0/go-jwt-middleware"
 	"github.com/dgrijalva/jwt-go"
@@ -83,6 +86,56 @@ func generatePrivateKey() *jwtmiddleware.JWTMiddleware {
 	})
 }
 
+func TokenObtainMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
+	tokenAuthValue := util.GetTokenAuthFromRequest(r)
+
+	// ignore empty kubeConfig location, this is singleton instance
+	clientGenerator := backend.NewClientGenerator("")
+
+	// If there was an error, do not call next.
+	if tokenAuthValue != "" && next != nil {
+		tokenName, tokenKey := util.SplitTokenParts(tokenAuthValue)
+		if tokenName == "" || tokenKey == "" {
+			util.JsonErrorResponse(errors.New("RancherCUBE: couldn't split token"), http.StatusUnauthorized, w)
+			return
+		}
+
+		storedToken, err := clientGenerator.CheckTokenCache(tokenKey)
+		useTokenClient := false
+		if err != nil {
+			if apierrors.IsNotFound(err) {
+				useTokenClient = true
+			} else {
+				util.JsonErrorResponse(errors.New("RancherCUBE: couldn't found stored token"), http.StatusUnauthorized, w)
+				return
+			}
+		}
+
+		if useTokenClient {
+			storedToken, err = clientGenerator.Infraclientset.CubeV1alpha1().Tokens("").Get(tokenName, util.GetOptions)
+			if err != nil {
+				util.JsonErrorResponse(errors.New("RancherCUBE: couldn't found stored token"), http.StatusUnauthorized, w)
+				return
+			}
+		}
+
+		if storedToken.Token != tokenKey || storedToken.ObjectMeta.Name != tokenName {
+			util.JsonErrorResponse(errors.New("RancherCUBE: stored token not match request token"), http.StatusUnauthorized, w)
+			return
+		}
+
+		if util.IsExpired(*storedToken) {
+			util.JsonErrorResponse(errors.New("RancherCUBE: stored token is expired"), http.StatusUnauthorized, w)
+			return
+		}
+
+		r.Header.Set("Authorization", "Bearer "+storedToken.Token)
+		// TODO: impersonate user header
+
+		next(w, r)
+	}
+}
+
 func NewRouter(s *Server) *mux.Router {
 	schemas := NewSchema()
 	router := mux.NewRouter()
@@ -107,6 +160,10 @@ func NewRouter(s *Server) *mux.Router {
 		s.Login(w, req)
 	})
 
+	unSecureRouter.Methods("POST").Path("/logout").HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		s.Logout(w, req)
+	})
+
 	commonMiddleware := negroni.New(
 		negroni.NewRecovery(),
 		negroni.NewLogger(),
@@ -115,7 +172,7 @@ func NewRouter(s *Server) *mux.Router {
 	jwtMiddleware := generatePrivateKey()
 
 	router.PathPrefix("/v1").Handler(commonMiddleware.With(
-		//negroni.HandlerFunc(util.TokenObtainMiddleware),
+		negroni.HandlerFunc(TokenObtainMiddleware),
 		negroni.HandlerFunc(jwtMiddleware.HandlerWithNext),
 		negroni.Wrap(apiRouter),
 	))

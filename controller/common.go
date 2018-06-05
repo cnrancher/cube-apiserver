@@ -28,6 +28,7 @@ const (
 	UserSearchIndex               = "auth.user.cube.rancher.io/user-search-index"
 	PrincipalByIdIndex            = "auth.user.cube.rancher.io/principal-id-index"
 	TokenByNameIndex              = "auth.user.cube.rancher.io/token-name-index"
+	TokenByKeyIndex               = "auth.user.cube.rancher.io/token-key-index"
 	UserIDLabel                   = "auth.user.cube.rancher.io/token-user-id"
 	ClusterRoleBindingByNameIndex = "auth.user.cube.rancher.io/crb-name"
 	ClusterRoleByNameIndex        = "auth.user.cube.rancher.io/cr-name"
@@ -91,6 +92,15 @@ func TokenByName(obj interface{}) ([]string, error) {
 		return []string{}, nil
 	}
 	return []string{token.Name}, nil
+}
+
+func TokenByKey(obj interface{}) ([]string, error) {
+	token, ok := obj.(*userv1alpha1.Token)
+	if !ok {
+		return []string{}, nil
+	}
+
+	return []string{token.Token}, nil
 }
 
 func ClusterRoleBindingByName(obj interface{}) ([]string, error) {

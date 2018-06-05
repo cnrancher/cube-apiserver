@@ -75,6 +75,10 @@ func CreateLoginToken(clientGenerator *backend.ClientGenerator, signKey *rsa.Pri
 
 func NewLoginToken(clientGenerator *backend.ClientGenerator, userID string, userPrincipal v1alpha1.Principal, providerInfo map[string]string, ttl int64, description string, signKey *rsa.PrivateKey) (v1alpha1.Token, error) {
 	token := &v1alpha1.Token{
+		TypeMeta: metaV1.TypeMeta{
+			APIVersion: "cube.rancher.io/v1alpha1",
+			Kind:       "Token",
+		},
 		UserPrincipal: userPrincipal,
 		IsDerived:     true,
 		TTLMillis:     ttl,
@@ -85,10 +89,10 @@ func NewLoginToken(clientGenerator *backend.ClientGenerator, userID string, user
 		Description:   description,
 	}
 
-	return CreateOrUpdateToken(clientGenerator, token, signKey)
+	return CreateOrUpdateToken(clientGenerator, *token, signKey)
 }
 
-func CreateOrUpdateToken(clientGenerator *backend.ClientGenerator, token *v1alpha1.Token, signKey *rsa.PrivateKey) (v1alpha1.Token, error) {
+func CreateOrUpdateToken(clientGenerator *backend.ClientGenerator, token v1alpha1.Token, signKey *rsa.PrivateKey) (v1alpha1.Token, error) {
 	key, err := util.GenerateToken(token.TTLMillis, signKey)
 	if err != nil {
 		logrus.Errorf("RancherCUBE: failed to generate token key: %v", err)
@@ -97,31 +101,22 @@ func CreateOrUpdateToken(clientGenerator *backend.ClientGenerator, token *v1alph
 
 	labels := make(map[string]string)
 	labels[controller.UserIDLabel] = token.UserID
-	token.APIVersion = "cube.rancher.io/v1alpha1"
-	token.Kind = "Token"
 	token.Token = key
 	token.ObjectMeta = metaV1.ObjectMeta{
 		GenerateName: "token-",
 		Labels:       labels,
 	}
 
-	createdToken, err := clientGenerator.Infraclientset.CubeV1alpha1().Tokens(token.UserPrincipal.Namespace).Create(token)
+	generateToken, err := common.GenerateToken(token.UserPrincipal.Namespace, token, token.AuthProvider)
 	if err != nil && !k8serrors.IsAlreadyExists(err) {
 		return v1alpha1.Token{}, err
 	}
 
-	token, err = common.GenerateToken(token.UserPrincipal.Namespace, *token, createdToken.AuthProvider)
+	generateToken = util.SetTokenExpiresAt(generateToken)
+	generateToken, err = clientGenerator.Infraclientset.CubeV1alpha1().Tokens(token.UserPrincipal.Namespace).Update(generateToken)
 	if err != nil {
 		return v1alpha1.Token{}, err
 	}
 
-	token = util.SetTokenExpiresAt(token)
-	token.APIVersion = "cube.rancher.io/v1alpha1"
-	token.Kind = "Token"
-	createdToken, err = clientGenerator.Infraclientset.CubeV1alpha1().Tokens(token.UserPrincipal.Namespace).Update(token)
-	if err != nil {
-		return v1alpha1.Token{}, err
-	}
-
-	return *createdToken, nil
+	return *generateToken, nil
 }

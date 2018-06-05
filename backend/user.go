@@ -186,16 +186,16 @@ func (c *ClientGenerator) CheckUserCache(principalName string) (*v1alpha1.User, 
 
 	users, err := informer.GetIndexer().ByIndex(controller.UserByPrincipalIndex, principalName)
 	if err != nil {
-		return nil, err
+		return &v1alpha1.User{}, err
 	}
 	if len(users) > 1 {
-		return nil, errors.Errorf("RancherCUBE: can't find unique user for principal %v", principalName)
+		return &v1alpha1.User{}, errors.Errorf("RancherCUBE: can't find unique user for principal %v", principalName)
 	}
 	if len(users) == 1 {
 		u := users[0].(*v1alpha1.User)
 		return u.DeepCopy(), nil
 	}
-	return nil, nil
+	return &v1alpha1.User{}, nil
 }
 
 func (c *ClientGenerator) CheckPrincipalCache(principalName string) (*v1alpha1.Principal, error) {
@@ -205,16 +205,35 @@ func (c *ClientGenerator) CheckPrincipalCache(principalName string) (*v1alpha1.P
 
 	principals, err := informer.GetIndexer().ByIndex(controller.PrincipalByIdIndex, principalName)
 	if err != nil {
-		return nil, err
+		return &v1alpha1.Principal{}, err
 	}
 	if len(principals) > 1 {
-		return nil, errors.Errorf("RancherCUBE: can't find unique principal %v", principalName)
+		return &v1alpha1.Principal{}, errors.Errorf("RancherCUBE: can't find unique principal %v", principalName)
 	}
 	if len(principals) == 1 {
 		u := principals[0].(*v1alpha1.Principal)
 		return u.DeepCopy(), nil
 	}
-	return nil, nil
+	return &v1alpha1.Principal{}, nil
+}
+
+func (c *ClientGenerator) CheckTokenCache(token string) (*v1alpha1.Token, error) {
+	informer := c.CubeInformerFactory.Cube().V1alpha1().Tokens().Informer()
+	indexers := map[string]cache.IndexFunc{controller.TokenByKeyIndex: controller.TokenByKey}
+	informer.AddIndexers(indexers)
+
+	tokens, err := informer.GetIndexer().ByIndex(controller.TokenByKeyIndex, token)
+	if err != nil {
+		return &v1alpha1.Token{}, err
+	}
+	if len(tokens) > 1 {
+		return &v1alpha1.Token{}, errors.Errorf("RancherCUBE: can't find unique token key")
+	}
+	if len(tokens) == 1 {
+		u := tokens[0].(*v1alpha1.Token)
+		return u.DeepCopy(), nil
+	}
+	return &v1alpha1.Token{}, nil
 }
 
 func (c *ClientGenerator) checkLabels(principalName string) (*v1alpha1.User, labels.Set, error) {
