@@ -28,6 +28,7 @@ func (s *Server) Login(w http.ResponseWriter, req *http.Request) error {
 		}
 		http.SetCookie(w, tokenCookie)
 	} else {
+		token.Token = token.ObjectMeta.Name + ":" + token.Token
 		util.JsonResponse(token, http.StatusCreated, w)
 	}
 
