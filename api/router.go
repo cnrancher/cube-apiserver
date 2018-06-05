@@ -103,7 +103,9 @@ func NewRouter(s *Server) *mux.Router {
 	apiRouter.Methods("GET").Path("/nodes/{id}").Handler(f(schemas, s.NodeGet))
 	apiRouter.Methods("GET").Path("/clusters").Handler(f(schemas, s.ClusterList))
 
-	unSecureRouter.Methods("POST").Path("/login").Handler(f(schemas, s.Login))
+	unSecureRouter.Methods("POST").Path("/login").HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		s.Login(w, req)
+	})
 
 	commonMiddleware := negroni.New(
 		negroni.NewRecovery(),
@@ -113,6 +115,7 @@ func NewRouter(s *Server) *mux.Router {
 	jwtMiddleware := generatePrivateKey()
 
 	router.PathPrefix("/v1").Handler(commonMiddleware.With(
+		//negroni.HandlerFunc(util.TokenObtainMiddleware),
 		negroni.HandlerFunc(jwtMiddleware.HandlerWithNext),
 		negroni.Wrap(apiRouter),
 	))

@@ -13,6 +13,7 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/bcrypt"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/tools/cache"
 )
@@ -24,9 +25,9 @@ const (
 
 type Provider struct {
 	userLister      v1alpha1lister.UserLister
-	userIndexer     cache.Indexer
+	userInformer    cache.SharedIndexInformer
 	tokenLister     v1alpha1lister.TokenLister
-	tokenIndexer    cache.Indexer
+	tokenInformer   cache.SharedIndexInformer
 	clientGenerator *backend.ClientGenerator
 }
 
@@ -41,9 +42,9 @@ func Configure(clientGenerator *backend.ClientGenerator) provider.AuthProvider {
 
 	return &Provider{
 		userLister:      clientGenerator.CubeInformerFactory.Cube().V1alpha1().Users().Lister(),
-		userIndexer:     informer.GetIndexer(),
+		userInformer:    informer,
 		tokenLister:     clientGenerator.CubeInformerFactory.Cube().V1alpha1().Tokens().Lister(),
-		tokenIndexer:    tokenInformer.GetIndexer(),
+		tokenInformer:   tokenInformer,
 		clientGenerator: clientGenerator,
 	}
 }
@@ -114,7 +115,7 @@ func (p *Provider) AuthenticateUser(input interface{}, providerName string) (v1a
 	username := localInput.Username
 	pwd := localInput.Password
 
-	objs, err := p.userIndexer.ByIndex(controller.UserByUsernameIndex, username)
+	objs, err := p.userInformer.GetIndexer().ByIndex(controller.UserByUsernameIndex, username)
 	if err != nil {
 		return v1alpha1.Principal{}, nil, err
 	}
@@ -163,19 +164,13 @@ func (p *Provider) CheckAccess(userPrincipal v1alpha1.Principal) (bool, error) {
 	return false, errors.Errorf("RancherCUBE: no allowed principalIDs")
 }
 
-func (p *Provider) SearchToken(tokenName, providerName string) (*v1alpha1.Token, error) {
-	objs, err := p.tokenIndexer.ByIndex(controller.TokenByNameIndex, tokenName)
-	if len(objs) == 0 {
-		return &v1alpha1.Token{}, errors.Wrap(err, "RancherCUBE: authentication failed")
+func (p *Provider) GenerateToken(namespace string, token v1alpha1.Token, providerName string) (*v1alpha1.Token, error) {
+	createdToken, err := p.clientGenerator.Infraclientset.CubeV1alpha1().Tokens(token.UserPrincipal.Namespace).Create(&token)
+	if err != nil && !k8serrors.IsAlreadyExists(err) {
+		return &v1alpha1.Token{}, err
 	}
-	if len(objs) > 1 {
-		return &v1alpha1.Token{}, fmt.Errorf("RancherCUBE: found more than one token with name %v", tokenName)
-	}
-	user, ok := objs[0].(*v1alpha1.Token)
-	if !ok {
-		return &v1alpha1.Token{}, fmt.Errorf("RancherCUBE: fatal error. %v is not a token", objs[0])
-	}
-	return user, nil
+
+	return createdToken, nil
 }
 
 func (p *Provider) listAllUsers(searchKey string) ([]*v1alpha1.User, error) {
@@ -200,7 +195,7 @@ func (p *Provider) listUsersByIndex(searchKey string) ([]*v1alpha1.User, error) 
 	var localUsers []*v1alpha1.User
 	var err error
 
-	objs, err := p.userIndexer.ByIndex(controller.UserSearchIndex, searchKey)
+	objs, err := p.userInformer.GetIndexer().ByIndex(controller.UserSearchIndex, searchKey)
 	if err != nil {
 		logrus.Infof("RancherCUBE: failed to search User resources for %v: %v", searchKey, err)
 		return localUsers, err

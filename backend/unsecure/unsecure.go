@@ -110,7 +110,7 @@ func CreateOrUpdateToken(clientGenerator *backend.ClientGenerator, token *v1alph
 		return v1alpha1.Token{}, err
 	}
 
-	token, err = common.SearchToken(createdToken.Name, createdToken.AuthProvider)
+	token, err = common.GenerateToken(token.UserPrincipal.Namespace, *token, createdToken.AuthProvider)
 	if err != nil {
 		return v1alpha1.Token{}, err
 	}

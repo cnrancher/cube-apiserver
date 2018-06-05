@@ -12,10 +12,18 @@ import (
 
 	"github.com/cnrancher/cube-apiserver/k8s/pkg/apis/cube/v1alpha1"
 
+	"encoding/base64"
 	"github.com/Sirupsen/logrus"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/bcrypt"
+)
+
+const (
+	CookieName      = "RC_SESS"
+	AuthHeaderName  = "Authorization"
+	AuthValuePrefix = "Bearer"
+	BasicAuthPrefix = "Basic"
 )
 
 func RegisterShutdownChannel(done chan struct{}) {
@@ -26,6 +34,21 @@ func RegisterShutdownChannel(done chan struct{}) {
 		logrus.Infof("RancherCUBE: receive %v to exit", sig)
 		close(done)
 	}()
+}
+
+func JsonErrorResponse(err error, statusCode int, w http.ResponseWriter) {
+	response := map[string]string{
+		"msg": err.Error(),
+	}
+	json, err := json.Marshal(response)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(statusCode)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(json)
 }
 
 func JsonResponse(response interface{}, statusCode int, w http.ResponseWriter) {
@@ -99,4 +122,46 @@ func HashPasswordString(password string) (string, error) {
 		return "", errors.Wrap(err, "RancherCUBE: problem encrypting password")
 	}
 	return string(hash), nil
+}
+
+func GetTokenAuthFromRequest(req *http.Request) string {
+	var tokenAuthValue string
+	authHeader := req.Header.Get(AuthHeaderName)
+	authHeader = strings.TrimSpace(authHeader)
+
+	if authHeader != "" {
+		parts := strings.SplitN(authHeader, " ", 2)
+		if strings.EqualFold(parts[0], AuthValuePrefix) {
+			if len(parts) > 1 {
+				tokenAuthValue = strings.TrimSpace(parts[1])
+			}
+		} else if strings.EqualFold(parts[0], BasicAuthPrefix) {
+			if len(parts) > 1 {
+				base64Value := strings.TrimSpace(parts[1])
+				data, err := base64.URLEncoding.DecodeString(base64Value)
+				if err != nil {
+					logrus.Errorf("Error %v parsing %v header", err, AuthHeaderName)
+				} else {
+					tokenAuthValue = string(data)
+				}
+			}
+		}
+	} else {
+		cookie, err := req.Cookie(CookieName)
+		if err == nil {
+			tokenAuthValue = cookie.Value
+		}
+	}
+	return tokenAuthValue
+}
+
+func TokenObtainMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
+	token := GetTokenAuthFromRequest(r)
+
+	// If there was an error, do not call next.
+	if token != "" && next != nil {
+		r.Header.Set("Authorization", token)
+		// TODO: impersonate user header
+		next(w, r)
+	}
 }

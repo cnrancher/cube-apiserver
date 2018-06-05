@@ -66,8 +66,11 @@ func startAPIServer(c *cli.Context) error {
 	infraController := controller.NewInfraController(&clientGenerator.Clientset, &clientGenerator.Infraclientset, clientGenerator.InformerFactory, clientGenerator.CubeInformerFactory)
 	userController := controller.NewUserController(&clientGenerator.Clientset, &clientGenerator.Infraclientset, clientGenerator.InformerFactory, clientGenerator.CubeInformerFactory)
 
-	go clientGenerator.InformerFactory.Start(done)
-	go clientGenerator.CubeInformerFactory.Start(done)
+	go func() {
+		clientGenerator.InformerFactory.Start(done)
+		clientGenerator.CubeInformerFactory.Start(done)
+		common.Configure(clientGenerator)
+	}()
 
 	go func() {
 		if err := infraController.Run(2, done); err != nil {
@@ -76,7 +79,6 @@ func startAPIServer(c *cli.Context) error {
 	}()
 
 	go func() {
-		common.Configure(clientGenerator)
 		if err := userController.Run(2, done); err != nil {
 			glog.Fatalf("RancherCUBE: error running user controller: %s", err.Error())
 		}

@@ -126,11 +126,13 @@ func (c *ClientGenerator) InitCubeAdmin() error {
 			PrincipalIDs:       []string{"local.kube-system.cube-admin"},
 			Me:                 false,
 		}
+
 		if !apierrors.IsAlreadyExists(err) {
 			_, err = c.Infraclientset.CubeV1alpha1().Users("kube-system").Create(cubeAdmin)
 		} else {
 			_, err = c.Infraclientset.CubeV1alpha1().Users("kube-system").Update(cubeAdmin)
 		}
+
 		if err == nil || (err != nil && apierrors.IsAlreadyExists(err)) {
 			return err
 		}

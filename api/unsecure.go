@@ -14,7 +14,7 @@ const (
 func (s *Server) Login(w http.ResponseWriter, req *http.Request) error {
 	token, responseType, err := unsecure.CreateLoginToken(s.c, JwtSignKey, req)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
+		util.JsonErrorResponse(err, http.StatusUnauthorized, w)
 		return err
 	}
 
