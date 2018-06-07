@@ -5,8 +5,8 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/rancher/go-rancher/api"
-	"github.com/cnrancher/cube-apiserver/backend"
 	"github.com/cnrancher/cube-apiserver/controller"
+	"github.com/cnrancher/cube-apiserver/backend"
 )
 
 func (s *Server) LonghornList(rw http.ResponseWriter, req *http.Request) error {
@@ -27,11 +27,17 @@ func (s *Server) LonghornGet(rw http.ResponseWriter, req *http.Request) error {
 	if err != nil || lh == nil {
 		return errors.Wrap(err, "failed to read longhorn")
 	}
-	ing, err := s.c.IngressGet(controller.LonghornNamespace, backend.LhIngressName)
+
+	err = s.c.ServiceGet(controller.LonghornNamespace, "longhorn-frontend")
 	if err != nil {
-		return errors.Wrap(err, "failed to get ingress")
+		return errors.Wrap(err, "failed to get service")
 	}
-	apiContext.Write(toInfrastructureResource(lh, GetSchemaType().Longhorn, ing, 0))
+
+	ip, err := s.c.NodeIPGet()
+	if err != nil {
+		return errors.Wrap(err, "failed to get node ip")
+	}
+	apiContext.Write(toInfrastructureResource(lh, GetSchemaType().Longhorn, backend.Service, ip))
 	return nil
 }
 
@@ -42,11 +48,17 @@ func (s *Server) LonghornCreate(rw http.ResponseWriter, req *http.Request) error
 	if err != nil {
 		return errors.Wrap(err, "failed to create longhorn")
 	}
-	ing, err := s.c.IngressGet(controller.LonghornNamespace, backend.LhIngressName)
+
+	err = s.c.ServiceGet(controller.LonghornNamespace, "longhorn-frontend")
 	if err != nil {
-		return errors.Wrap(err, "failed to get ingress")
+		return errors.Wrap(err, "failed to get service")
 	}
-	apiContext.Write(toInfrastructureResource(lh, GetSchemaType().Longhorn, ing, 0))
+
+	ip, err := s.c.NodeIPGet()
+	if err != nil {
+		return errors.Wrap(err, "failed to get node ip")
+	}
+	apiContext.Write(toInfrastructureResource(lh, GetSchemaType().Longhorn, backend.Service, ip))
 	return nil
 }
 

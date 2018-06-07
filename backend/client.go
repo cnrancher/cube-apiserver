@@ -12,6 +12,8 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	listerscorev1 "k8s.io/client-go/listers/core/v1"
+	"k8s.io/client-go/tools/cache"
 )
 
 var (
@@ -24,6 +26,8 @@ type ClientGenerator struct {
 	Infraclientset      infracs.Clientset
 	InformerFactory     informers.SharedInformerFactory
 	CubeInformerFactory cubeinformers.SharedInformerFactory
+	serviceLister       listerscorev1.ServiceLister
+	serviceSynced       cache.InformerSynced
 }
 
 func NewClientGenerator(kubeConfig string) *ClientGenerator {
@@ -60,6 +64,7 @@ func NewClientGenerator(kubeConfig string) *ClientGenerator {
 
 		informerFactory := informers.NewSharedInformerFactory(clientset, time.Second*30)
 		infraInformerFactory := cubeinformers.NewSharedInformerFactory(infraclientset, time.Second*30)
+		serviceInformer := informerFactory.Core().V1().Services()
 
 		clientGenerator = &ClientGenerator{
 			Clientset:           *clientset,
@@ -67,6 +72,8 @@ func NewClientGenerator(kubeConfig string) *ClientGenerator {
 			Infraclientset:      *infraclientset,
 			InformerFactory:     informerFactory,
 			CubeInformerFactory: infraInformerFactory,
+			serviceLister:       serviceInformer.Lister(),
+			serviceSynced:       serviceInformer.Informer().HasSynced,
 		}
 	}
 

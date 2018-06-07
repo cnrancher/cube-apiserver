@@ -16,7 +16,7 @@ func (c *ClientGenerator) DashBoardList() (*v1alpha1.InfrastructureList, error) 
 	if err != nil {
 		return nil, err
 	}
-	return c.Infraclientset.CubeV1alpha1().Infrastructures(info.Data[DashboardNamespace]).List(metav1.ListOptions{})
+	return c.Infraclientset.CubeV1alpha1().Infrastructures(info.Data[dashboardNamespace]).List(metav1.ListOptions{})
 }
 
 func (c *ClientGenerator) DashBoardGet() (*v1alpha1.Infrastructure, error) {
@@ -24,7 +24,7 @@ func (c *ClientGenerator) DashBoardGet() (*v1alpha1.Infrastructure, error) {
 	if err != nil {
 		return nil, err
 	}
-	return c.Infraclientset.CubeV1alpha1().Infrastructures(info.Data[DashboardNamespace]).Get(info.Data[DashboardName], metav1.GetOptions{})
+	return c.Infraclientset.CubeV1alpha1().Infrastructures(info.Data[dashboardNamespace]).Get(info.Data[dashboardName], metav1.GetOptions{})
 
 }
 
@@ -34,26 +34,26 @@ func (c *ClientGenerator) DashBoardDeploy() (*v1alpha1.Infrastructure, error) {
 		return nil, err
 	}
 
-	err = ensureNamespaceExists(c, info.Data[DashboardNamespace])
+	err = ensureNamespaceExists(c, info.Data[dashboardNamespace])
 	if err != nil && !k8serrors.IsAlreadyExists(err) {
 		return nil, err
 	}
 
 	// generate & deploy ingress resources for visit
-	err = c.DashboardIngressDeploy()
-	if err != nil {
-		return nil, err
-	}
+	//err = c.DashboardIngressDeploy()
+	//if err != nil {
+	//	return nil, err
+	//}
 
-	db, err := c.Infraclientset.CubeV1alpha1().Infrastructures(info.Data[DashboardNamespace]).Create(&v1alpha1.Infrastructure{
+	db, err := c.Infraclientset.CubeV1alpha1().Infrastructures(info.Data[dashboardNamespace]).Create(&v1alpha1.Infrastructure{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      info.Data[DashboardName],
-			Namespace: info.Data[DashboardNamespace],
+			Name:      info.Data[dashboardName],
+			Namespace: info.Data[dashboardNamespace],
 		},
 		Spec: v1alpha1.InfraSpec{
-			DisplayName: info.Data[DashboardName],
-			Description: info.Data[DashboardDesc],
-			Icon:        info.Data[DashboardIcon],
+			DisplayName: info.Data[dashboardName],
+			Description: info.Data[dashboardDesc],
+			Icon:        info.Data[dashboardIcon],
 			InfraKind:   "Dashboard",
 			Replicas:    &dbReplicas,
 		},
@@ -62,7 +62,7 @@ func (c *ClientGenerator) DashBoardDeploy() (*v1alpha1.Infrastructure, error) {
 		return nil, err
 	}
 
-	//watcher, err := c.Infraclientset.CubeV1alpha1().Infrastructures(info.Data[DashboardNamespace]).Watch(metav1.ListOptions{})
+	//watcher, err := c.Infraclientset.CubeV1alpha1().Infrastructures(info.Data[dashboardNamespace]).Watch(metav1.ListOptions{})
 	//if err != nil {
 	//	return nil, err
 	//}
@@ -76,5 +76,5 @@ func (c *ClientGenerator) DashBoardDelete() error {
 	if err != nil {
 		return err
 	}
-	return c.Infraclientset.CubeV1alpha1().Infrastructures(info.Data[DashboardNamespace]).Delete(info.Data[DashboardName], &metav1.DeleteOptions{})
+	return c.Infraclientset.CubeV1alpha1().Infrastructures(info.Data[dashboardNamespace]).Delete(info.Data[dashboardName], &metav1.DeleteOptions{})
 }

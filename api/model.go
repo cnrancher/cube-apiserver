@@ -6,7 +6,7 @@ import (
 
 	"github.com/rancher/go-rancher/client"
 	"k8s.io/api/core/v1"
-	"k8s.io/api/extensions/v1beta1"
+	"github.com/cnrancher/cube-apiserver/util"
 )
 
 var KubeConfigLocation string
@@ -17,6 +17,7 @@ type schemaType struct {
 	Configmap string
 	Dashboard string
 	Longhorn  string
+	BaseInfo  string
 }
 
 func GetSchemaType() *schemaType {
@@ -25,6 +26,7 @@ func GetSchemaType() *schemaType {
 			Configmap: "configmap",
 			Dashboard: "dashboard",
 			Longhorn:  "longhorn",
+			BaseInfo:  "baseinfo",
 		}
 	}
 
@@ -46,6 +48,12 @@ type ConfigMap struct {
 	client.Resource
 
 	ConfigMap *v1.ConfigMap `json:"configmap"`
+}
+
+type BaseInfo struct {
+	client.Resource
+
+	BaseInfo []map[string]string `json:"baseinfo"`
 }
 
 type Infrastructure struct {
@@ -97,6 +105,7 @@ func NewSchema() *client.Schemas {
 	configMapSchema(schemas.AddType(GetSchemaType().Configmap, ConfigMap{}))
 	dashboardSchema(schemas.AddType(GetSchemaType().Dashboard, Infrastructure{}))
 	longhornSchema(schemas.AddType(GetSchemaType().Longhorn, Infrastructure{}))
+	baseInfoschema(schemas.AddType(GetSchemaType().BaseInfo, BaseInfo{}))
 	return schemas
 }
 
@@ -134,6 +143,16 @@ func configMapSchema(cm *client.Schema) {
 	}
 }
 
+func baseInfoschema(cm *client.Schema) {
+	cm.CollectionMethods = []string{"GET"}
+	cm.ResourceMethods = []string{"GET"}
+
+	cm.ResourceFields[GetSchemaType().BaseInfo] = client.Field{
+		Type:     "struct",
+		Nullable: true,
+	}
+}
+
 func dashboardSchema(dashboard *client.Schema) {
 	dashboard.CollectionMethods = []string{"GET", "POST"}
 	dashboard.ResourceMethods = []string{"GET", "DELETE"}
@@ -159,18 +178,18 @@ func longhornSchema(longhorn *client.Schema) {
 func toInfrastructureCollection(list *v1alpha1.InfrastructureList, infraType string) *client.GenericCollection {
 	data := []interface{}{}
 	for _, item := range list.Items {
-		data = append(data, toInfrastructureResource(&item, infraType, nil, 0))
+		data = append(data, toInfrastructureResource(&item, infraType, nil, ""))
 	}
 	return &client.GenericCollection{Data: data, Collection: client.Collection{ResourceType: infraType}}
 }
 
-func toInfrastructureResource(infra *v1alpha1.Infrastructure, infraType string, ingress *v1beta1.Ingress, index int) *Infrastructure {
+func toInfrastructureResource(infra *v1alpha1.Infrastructure, infraType string, service *v1.Service, ip string) *Infrastructure {
 	name := infra.GetName()
-	host := ""
-	if ingress != nil {
-		host = ingress.Spec.Rules[0].Host
-		path := ingress.Spec.Rules[0].HTTP.Paths[index].Path
-		host = host + path
+	host := ip
+
+	if service != nil {
+		port := service.Spec.Ports[0].NodePort
+		host = host + ":" + util.Int32ToString(port)
 	}
 	if name == "" {
 		return nil
@@ -191,11 +210,25 @@ func toDeleteResource(resType string) *Result {
 	msg := "delete success"
 	return &Result{
 		Resource: client.Resource{
-			Id:      string(msg),
+			Id:      string("delete"),
 			Type:    resType,
 			Actions: map[string]string{},
 		},
 		Message: msg,
+	}
+}
+
+func toBaseInfo(baseInfo []map[string]string) *BaseInfo {
+	if baseInfo == nil {
+		return nil
+	}
+	return &BaseInfo{
+		Resource: client.Resource{
+			Id:      string("baseInfo"),
+			Type:    GetSchemaType().BaseInfo,
+			Actions: map[string]string{},
+		},
+		BaseInfo: baseInfo,
 	}
 }
 

@@ -641,6 +641,7 @@ func (c *InfraController) createDashboard(infra *infrav1alpha1.Infrastructure) (
 				Selector: map[string]string{
 					"k8s-app": "kubernetes-dashboard",
 				},
+				Type: "NodePort",
 			},
 		})
 		if err != nil && !k8serrors.IsAlreadyExists(err) {
@@ -784,7 +785,7 @@ func (c *InfraController) createLonghorn(infra *infrav1alpha1.Infrastructure) (*
 			return nil, err
 		}
 
-		// create longhorn role
+		// create longhorn clusterRole
 		_, err = c.clientset.RbacV1().ClusterRoles().Create(&rbacv1.ClusterRole{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "longhorn-role",
@@ -853,7 +854,7 @@ func (c *InfraController) createLonghorn(infra *infrav1alpha1.Infrastructure) (*
 			return nil, err
 		}
 
-		// create longhorn roleBinding
+		// create longhorn clusterRoleBinding
 		_, err = c.clientset.RbacV1().ClusterRoleBindings().Create(&rbacv1.ClusterRoleBinding{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "longhorn-bind",
@@ -884,7 +885,7 @@ func (c *InfraController) createLonghorn(infra *infrav1alpha1.Infrastructure) (*
 
 		// create longhorn daemonset
 		privileged := true
-		c.clientset.ExtensionsV1beta1().DaemonSets(LonghornNamespace).Create(&v1beta1.DaemonSet{
+		_, err = c.clientset.ExtensionsV1beta1().DaemonSets(LonghornNamespace).Create(&v1beta1.DaemonSet{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "longhorn-manager",
 				Labels: map[string]string{
@@ -1016,6 +1017,9 @@ func (c *InfraController) createLonghorn(infra *infrav1alpha1.Infrastructure) (*
 				},
 			},
 		})
+		if err != nil && !k8serrors.IsAlreadyExists(err) {
+			return nil, err
+		}
 
 		// create longhorn backend service
 		_, err = c.clientset.CoreV1().Services(LonghornNamespace).Create(&corev1.Service{
@@ -1075,6 +1079,7 @@ func (c *InfraController) createLonghorn(infra *infrav1alpha1.Infrastructure) (*
 				Selector: map[string]string{
 					"app": "longhorn-ui",
 				},
+				Type: "NodePort",
 			},
 		})
 		if err != nil && !k8serrors.IsAlreadyExists(err) {
@@ -1214,7 +1219,433 @@ func (c *InfraController) createLonghorn(infra *infrav1alpha1.Infrastructure) (*
 }
 
 func (c *InfraController) createRancherVM(infra *infrav1alpha1.Infrastructure) (*appsv1.Deployment, error) {
-	return nil, nil
+	err := c.ensureNamespaceExists(RancherVMNamespace)
+	if err == nil || k8serrors.IsAlreadyExists(err) {
+
+		// create rancherVM serviceAccount
+		_, err := c.clientset.CoreV1().ServiceAccounts(RancherVMNamespace).Create(&corev1.ServiceAccount{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "ranchervm-service-account",
+				Namespace: RancherVMNamespace,
+				OwnerReferences: []metav1.OwnerReference{
+					*metav1.NewControllerRef(infra, schema.GroupVersionKind{
+						Group:   infrav1alpha1.SchemeGroupVersion.Group,
+						Version: infrav1alpha1.SchemeGroupVersion.Version,
+						Kind:    "Infrastructure",
+					}),
+				},
+			},
+		})
+		if err != nil && !k8serrors.IsAlreadyExists(err) {
+			return nil, err
+		}
+
+		// create rancherVM clusterRole
+		_, err = c.clientset.RbacV1().ClusterRoles().Create(&rbacv1.ClusterRole{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "ranchervm-role",
+				OwnerReferences: []metav1.OwnerReference{
+					*metav1.NewControllerRef(infra, schema.GroupVersionKind{
+						Group:   infrav1alpha1.SchemeGroupVersion.Group,
+						Version: infrav1alpha1.SchemeGroupVersion.Version,
+						Kind:    "Infrastructure",
+					}),
+				},
+			},
+			Rules: []rbacv1.PolicyRule{
+				{
+					APIGroups: []string{"apiextensions.k8s.io"},
+					Resources: []string{"customresourcedefinitions"},
+					Verbs:     []string{"*"},
+				},
+				{
+					APIGroups: []string{"", "batch"},
+					Resources: []string{"pods", "nodes", "services", "jobs", "endpoints"},
+					Verbs:     []string{"*"},
+				},
+				{
+					APIGroups: []string{"vm.rancher.com"},
+					Resources: []string{"virtualmachines"},
+					Verbs:     []string{"*"},
+				},
+				{
+					APIGroups: []string{"vm.rancher.com"},
+					Resources: []string{"arptables"},
+					Verbs:     []string{"*"},
+				},
+				{
+					APIGroups: []string{"vm.rancher.com"},
+					Resources: []string{"credentials"},
+					Verbs:     []string{"*"},
+				},
+			},
+		})
+		if err != nil && !k8serrors.IsAlreadyExists(err) {
+			return nil, err
+		}
+
+		// create longhorn clusterRoleBinding
+		_, err = c.clientset.RbacV1().ClusterRoleBindings().Create(&rbacv1.ClusterRoleBinding{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "ranchervm-bind",
+				OwnerReferences: []metav1.OwnerReference{
+					*metav1.NewControllerRef(infra, schema.GroupVersionKind{
+						Group:   infrav1alpha1.SchemeGroupVersion.Group,
+						Version: infrav1alpha1.SchemeGroupVersion.Version,
+						Kind:    "Infrastructure",
+					}),
+				},
+			},
+			RoleRef: rbacv1.RoleRef{
+				APIGroup: "rbac.authorization.k8s.io",
+				Kind:     "ClusterRole",
+				Name:     "ranchervm-role",
+			},
+			Subjects: []rbacv1.Subject{
+				{
+					Kind:      "ServiceAccount",
+					Name:      "ranchervm-service-account",
+					Namespace: RancherVMNamespace,
+				},
+			},
+		})
+		if err != nil && !k8serrors.IsAlreadyExists(err) {
+			return nil, err
+		}
+
+		// create ranchervm backend service
+		_, err = c.clientset.CoreV1().Services(RancherVMNamespace).Create(&corev1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "ranchervm-backend",
+				Namespace: RancherVMNamespace,
+				OwnerReferences: []metav1.OwnerReference{
+					*metav1.NewControllerRef(infra, schema.GroupVersionKind{
+						Group:   infrav1alpha1.SchemeGroupVersion.Group,
+						Version: infrav1alpha1.SchemeGroupVersion.Version,
+						Kind:    "Infrastructure",
+					}),
+				},
+			},
+			Spec: corev1.ServiceSpec{
+				Ports: []corev1.ServicePort{
+					{
+						Name: "api",
+						Port: 9500,
+						//TargetPort: intstr.FromInt(9090),
+					},
+				},
+				Selector: map[string]string{
+					"app": "ranchervm-backend",
+				},
+				Type: "ClusterIP",
+			},
+		})
+		if err != nil && !k8serrors.IsAlreadyExists(err) {
+			return nil, err
+		}
+
+		// create ranchervm frontend service
+		_, err = c.clientset.CoreV1().Services(RancherVMNamespace).Create(&corev1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "ranchervm-frontend",
+				Namespace: RancherVMNamespace,
+				OwnerReferences: []metav1.OwnerReference{
+					*metav1.NewControllerRef(infra, schema.GroupVersionKind{
+						Group:   infrav1alpha1.SchemeGroupVersion.Group,
+						Version: infrav1alpha1.SchemeGroupVersion.Version,
+						Kind:    "Infrastructure",
+					}),
+				},
+			},
+			Spec: corev1.ServiceSpec{
+				Ports: []corev1.ServicePort{
+					{
+						Name: "ui",
+						Port: 8000,
+						//TargetPort: intstr.FromInt(9090),
+					},
+				},
+				Selector: map[string]string{
+					"app": "ranchervm-frontend",
+				},
+				Type: "NodePort",
+			},
+		})
+		if err != nil && !k8serrors.IsAlreadyExists(err) {
+			return nil, err
+		}
+
+		// create ranchervm controller deployment
+		controllerReplica := int32(2)
+		_, err = c.clientset.AppsV1().Deployments(RancherVMNamespace).Create(&appsv1.Deployment{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "ranchervm-controller",
+				Namespace: RancherVMNamespace,
+				OwnerReferences: []metav1.OwnerReference{
+					*metav1.NewControllerRef(infra, schema.GroupVersionKind{
+						Group:   infrav1alpha1.SchemeGroupVersion.Group,
+						Version: infrav1alpha1.SchemeGroupVersion.Version,
+						Kind:    "Infrastructure",
+					}),
+				},
+			},
+			Spec: appsv1.DeploymentSpec{
+				Replicas: &controllerReplica /*infra.Spec.Replicas*/ ,
+				Template: corev1.PodTemplateSpec{
+					ObjectMeta: metav1.ObjectMeta{
+						Labels: map[string]string{
+							"app": "ranchervm-controller",
+						},
+					},
+					Spec: corev1.PodSpec{
+						Affinity: &corev1.Affinity{
+							PodAntiAffinity: &corev1.PodAntiAffinity{
+								RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
+									{
+										LabelSelector: &metav1.LabelSelector{
+											MatchExpressions: []metav1.LabelSelectorRequirement{
+												{
+													Key:      "app",
+													Operator: "In",
+													Values: []string{
+														"ranchervm-controller",
+													},
+												},
+											},
+										},
+										TopologyKey: "kubernetes.io/hostname",
+									},
+								},
+							},
+						},
+						Containers: []corev1.Container{
+							{
+								Name:            "ranchervm-controller",
+								Image:           "rancher/vm",
+								ImagePullPolicy: "Always",
+								Args: []string{
+									"--vm",
+									"--bridge-iface=ens33",
+									"--v=3",
+								},
+							},
+						},
+						ServiceAccountName: "ranchervm-service-account",
+					},
+				},
+			},
+		})
+		if err != nil && !k8serrors.IsAlreadyExists(err) {
+			return nil, err
+		}
+
+		// create ranchervm backend deployment
+		_, err = c.clientset.AppsV1().Deployments(RancherVMNamespace).Create(&appsv1.Deployment{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "ranchervm-backend",
+				Namespace: RancherVMNamespace,
+				OwnerReferences: []metav1.OwnerReference{
+					*metav1.NewControllerRef(infra, schema.GroupVersionKind{
+						Group:   infrav1alpha1.SchemeGroupVersion.Group,
+						Version: infrav1alpha1.SchemeGroupVersion.Version,
+						Kind:    "Infrastructure",
+					}),
+				},
+			},
+			Spec: appsv1.DeploymentSpec{
+				Replicas: &controllerReplica,
+				Template: corev1.PodTemplateSpec{
+					ObjectMeta: metav1.ObjectMeta{
+						Labels: map[string]string{
+							"app": "ranchervm-backend",
+						},
+					},
+					Spec: corev1.PodSpec{
+						Affinity: &corev1.Affinity{
+							PodAntiAffinity: &corev1.PodAntiAffinity{
+								RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
+									{
+										LabelSelector: &metav1.LabelSelector{
+											MatchExpressions: []metav1.LabelSelectorRequirement{
+												{
+													Key:      "app",
+													Operator: "In",
+													Values: []string{
+														"ranchervm-backend",
+													},
+												},
+											},
+										},
+										TopologyKey: "kubernetes.io/hostname",
+									},
+								},
+							},
+						},
+						Containers: []corev1.Container{
+							{
+								Name:            "ranchervm-backend",
+								Image:           "rancher/vm",
+								ImagePullPolicy: "Always",
+								Args: []string{
+									"--backend",
+								},
+							},
+						},
+						ServiceAccountName: "ranchervm-service-account",
+					},
+				},
+			},
+		})
+		if err != nil && !k8serrors.IsAlreadyExists(err) {
+			return nil, err
+		}
+
+		// create ranchervm frontend deployment
+		deployment, err := c.clientset.AppsV1().Deployments(RancherVMNamespace).Create(&appsv1.Deployment{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "ranchervm-frontend",
+				Namespace: RancherVMNamespace,
+				OwnerReferences: []metav1.OwnerReference{
+					*metav1.NewControllerRef(infra, schema.GroupVersionKind{
+						Group:   infrav1alpha1.SchemeGroupVersion.Group,
+						Version: infrav1alpha1.SchemeGroupVersion.Version,
+						Kind:    "Infrastructure",
+					}),
+				},
+			},
+			Spec: appsv1.DeploymentSpec{
+				Replicas: &controllerReplica,
+				Template: corev1.PodTemplateSpec{
+					ObjectMeta: metav1.ObjectMeta{
+						Labels: map[string]string{
+							"app": "ranchervm-frontend",
+						},
+					},
+					Spec: corev1.PodSpec{
+						Affinity: &corev1.Affinity{
+							PodAntiAffinity: &corev1.PodAntiAffinity{
+								RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
+									{
+										LabelSelector: &metav1.LabelSelector{
+											MatchExpressions: []metav1.LabelSelectorRequirement{
+												{
+													Key:      "app",
+													Operator: "In",
+													Values: []string{
+														"ranchervm-frontend",
+													},
+												},
+											},
+										},
+										TopologyKey: "kubernetes.io/hostname",
+									},
+								},
+							},
+						},
+						Containers: []corev1.Container{
+							{
+								Name:            "ranchervm-frontend",
+								Image:           "rancher/vm-frontend",
+								ImagePullPolicy: "Always",
+								Env: []corev1.EnvVar{
+									{
+										Name:  "LONGHORN_MANAGER_IP",
+										Value: "http://ranchervm-backend:9500",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		})
+		if err != nil && !k8serrors.IsAlreadyExists(err) {
+			return nil, err
+		}
+
+		// create ip controller daemonset
+		_, err = c.clientset.ExtensionsV1beta1().DaemonSets(RancherVMNamespace).Create(&v1beta1.DaemonSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "ip-controller",
+				Namespace: RancherVMNamespace,
+				OwnerReferences: []metav1.OwnerReference{
+					*metav1.NewControllerRef(infra, schema.GroupVersionKind{
+						Group:   infrav1alpha1.SchemeGroupVersion.Group,
+						Version: infrav1alpha1.SchemeGroupVersion.Version,
+						Kind:    "Infrastructure",
+					}),
+				},
+			},
+			Spec: v1beta1.DaemonSetSpec{
+				Selector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"app": "ip-controller",
+					},
+				},
+				Template: corev1.PodTemplateSpec{
+					ObjectMeta: metav1.ObjectMeta{
+						Labels: map[string]string{
+							"app": "ip-controller",
+						},
+					},
+					Spec: corev1.PodSpec{
+						HostNetwork: true,
+						Containers: []corev1.Container{
+							{
+								Name:            "ip-controller",
+								Image:           "rancher/vm",
+								ImagePullPolicy: "Always",
+								Command: []string{
+									"sh",
+									"-c",
+								},
+								Args: []string{
+									"exec /ranchervm -ip -nodename ${MY_NODE_NAME} -v 3",
+								},
+								Env: []corev1.EnvVar{
+									{
+										Name: "MY_NODE_NAME",
+										ValueFrom: &corev1.EnvVarSource{
+											FieldRef: &corev1.ObjectFieldSelector{FieldPath: "spec.nodeName"},
+										},
+									},
+								},
+							},
+							{
+								Name:            "arp-scanner",
+								Image:           "rancher/vm",
+								ImagePullPolicy: "Always",
+								Command: []string{
+									"sh",
+									"-c",
+								},
+								Args: []string{
+									"while true; do",
+									"iface=br0;",
+									"inet_addr=$(ifconfig $iface | grep \"inet \" | awk '{print $2}' | cut -d':' -f2);",
+									"inet_mask=$(ifconfig $iface | grep \"inet \" | awk '{print $4}' | cut -d':' -f2);",
+									"ips=\"$(arp-scan -interface = $iface $inet_addr:$inet_mask | awk -F'\t' '$2 ~ /[0-9a-f][0-9a-f]:/{print $1})\";",
+									"for ip in $ips; do ",
+									"ping -c 1 -t 1 $ip &>/dev/null &",
+									"done;",
+									"sleep 5;",
+									"done",
+								},
+							},
+						},
+						ServiceAccountName: "ranchervm-service-account",
+					},
+				},
+			},
+		})
+		if err != nil && !k8serrors.IsAlreadyExists(err) {
+			return nil, err
+		}
+
+		return deployment, nil
+	}
+
+	return nil, err
 }
 
 func (c *InfraController) updateDashboard(infra *infrav1alpha1.Infrastructure) (*appsv1.Deployment, error) {

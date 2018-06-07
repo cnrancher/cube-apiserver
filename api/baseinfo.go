@@ -5,18 +5,16 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/rancher/go-rancher/api"
-	"github.com/cnrancher/cube-apiserver/backend"
 )
 
-func (s *Server) ConfigMapGet(w http.ResponseWriter, req *http.Request) error {
+func (s *Server) BaseInfoGet(w http.ResponseWriter, req *http.Request) error {
 	apiContext := api.GetApiContext(req)
-	//ns := mux.Vars(req)["ns"]
-	//cmId := mux.Vars(req)["id"]
-	cm, err := s.c.ConfigMapGet(backend.KubeSystemNamespace, backend.ConfigMapName)
-	if err != nil || cm == nil {
-		return errors.Wrap(err, "failed to read configmap")
+
+	baseInfo, err := s.c.BaseInfoGet()
+	if err != nil {
+		return errors.Wrap(err, "failed to read base info")
 	}
-	apiContext.Write(toConfigMapResource(cm))
+	apiContext.Write(toBaseInfo(baseInfo))
 	return nil
 }
 

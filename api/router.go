@@ -142,11 +142,11 @@ func NewRouter(s *Server) *mux.Router {
 		negroni.NewLogger(),
 	)
 
-	jwtMiddleware := generatePrivateKey()
+	//jwtMiddleware := generatePrivateKey()
 
 	router.PathPrefix("/v1").Handler(commonMiddleware.With(
-		negroni.HandlerFunc(TokenObtainMiddleware),
-		negroni.HandlerFunc(jwtMiddleware.HandlerWithNext),
+		//negroni.HandlerFunc(TokenObtainMiddleware),
+		//negroni.HandlerFunc(jwtMiddleware.HandlerWithNext),
 		negroni.Wrap(apiRouter),
 	))
 
@@ -154,8 +154,9 @@ func NewRouter(s *Server) *mux.Router {
 		negroni.Wrap(inSecureRouter),
 	))
 
-	apiRouter.Methods("GET").Path("/configmaps").Handler(f(schemas, s.ConfigMapGet))
-	//r.Methods("GET").Path("/v1/namespaces/{ns}/configmaps/{id}").Handler(f(schemas, s.ConfigMapGet))
+	apiRouter.Methods("GET").Path("/baseinfos").Handler(f(schemas, s.BaseInfoGet))
+	//apiRouter.Methods("GET").Path("/configmaps").Handler(f(schemas, s.BaseInfoGet))
+	//r.Methods("GET").Path("/v1/namespaces/{ns}/configmaps/{id}").Handler(f(schemas, s.BaseInfoGet))
 
 	apiRouter.Methods("GET").Path("/dashboards").Handler(f(schemas, s.DashboardList))
 	apiRouter.Methods("GET").Path("/dashboards/{id}").Handler(f(schemas, s.DashboardGet))

@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/rancher/go-rancher/api"
+	"github.com/cnrancher/cube-apiserver/controller"
 	"github.com/cnrancher/cube-apiserver/backend"
 )
 
@@ -26,11 +27,17 @@ func (s *Server) DashboardGet(rw http.ResponseWriter, req *http.Request) error {
 	if err != nil || db == nil {
 		return errors.Wrap(err, "failed to read dashboard")
 	}
-	ing, err := s.c.IngressGet(backend.KubeSystemNamespace, backend.DbIngressName)
+
+	err = s.c.ServiceGet(controller.DashboardNamespace, "kubernetes-dashboard")
 	if err != nil {
-		return errors.Wrap(err, "failed to get ingress")
+		return errors.Wrap(err, "failed to get service")
 	}
-	apiContext.Write(toInfrastructureResource(db, GetSchemaType().Dashboard, ing, 0))
+
+	ip, err := s.c.NodeIPGet()
+	if err != nil {
+		return errors.Wrap(err, "failed to get node ip")
+	}
+	apiContext.Write(toInfrastructureResource(db, GetSchemaType().Dashboard, backend.Service, ip))
 	return nil
 }
 
@@ -41,11 +48,17 @@ func (s *Server) DashboardCreate(rw http.ResponseWriter, req *http.Request) erro
 	if err != nil {
 		return errors.Wrap(err, "failed to create dashboard")
 	}
-	ing, err := s.c.IngressGet(backend.KubeSystemNamespace, backend.DbIngressName)
+
+	err = s.c.ServiceGet(controller.DashboardNamespace, "kubernetes-dashboard")
 	if err != nil {
-		return errors.Wrap(err, "failed to get ingress")
+		return errors.Wrap(err, "failed to get service")
 	}
-	apiContext.Write(toInfrastructureResource(db, GetSchemaType().Dashboard, ing, 0))
+
+	ip, err := s.c.NodeIPGet()
+	if err != nil {
+		return errors.Wrap(err, "failed to get node ip")
+	}
+	apiContext.Write(toInfrastructureResource(db, GetSchemaType().Dashboard, backend.Service, ip))
 	return nil
 }
 
