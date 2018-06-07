@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/cnrancher/cube-apiserver/backend"
+	"github.com/cnrancher/cube-apiserver/backend/insecure"
 	"github.com/cnrancher/cube-apiserver/backend/provider/common"
-	"github.com/cnrancher/cube-apiserver/backend/unsecure"
 	"github.com/cnrancher/cube-apiserver/util"
 
 	"github.com/Sirupsen/logrus"
@@ -14,7 +14,7 @@ import (
 )
 
 func (s *Server) Login(w http.ResponseWriter, req *http.Request) error {
-	token, responseType, err := unsecure.CreateLoginToken(s.c, JwtSignKey, req)
+	token, responseType, err := insecure.CreateLoginToken(s.c, JwtSignKey, req)
 	if err != nil {
 		util.JSONErrorResponse(err, http.StatusUnauthorized, w)
 		return err

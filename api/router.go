@@ -113,7 +113,7 @@ func NewRouter(s *Server) *mux.Router {
 	schemas := NewSchema()
 	router := mux.NewRouter()
 	apiRouter := mux.NewRouter().PathPrefix("/v1").Subrouter().StrictSlash(true)
-	unSecureRouter := mux.NewRouter().PathPrefix("/").Subrouter().StrictSlash(true)
+	inSecureRouter := mux.NewRouter().PathPrefix("/").Subrouter().StrictSlash(true)
 	f := HandleError
 
 	versionsHandler := api.VersionsHandler(schemas, "v1")
@@ -129,11 +129,11 @@ func NewRouter(s *Server) *mux.Router {
 	apiRouter.Methods("GET").Path("/nodes/{id}").Handler(f(schemas, s.NodeGet))
 	apiRouter.Methods("GET").Path("/clusters").Handler(f(schemas, s.ClusterList))
 
-	unSecureRouter.Methods("POST").Path("/login").HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+	inSecureRouter.Methods("POST").Path("/login").HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		s.Login(w, req)
 	})
 
-	unSecureRouter.Methods("POST").Path("/logout").HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+	inSecureRouter.Methods("POST").Path("/logout").HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		s.Logout(w, req)
 	})
 
@@ -151,7 +151,7 @@ func NewRouter(s *Server) *mux.Router {
 	))
 
 	router.PathPrefix("/").Handler(commonMiddleware.With(
-		negroni.Wrap(unSecureRouter),
+		negroni.Wrap(inSecureRouter),
 	))
 
 	return router

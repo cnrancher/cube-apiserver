@@ -11,7 +11,6 @@ import (
 	"github.com/cnrancher/cube-apiserver/util"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/golang/glog"
 	"github.com/urfave/cli"
 )
 
@@ -72,13 +71,13 @@ func startAPIServer(c *cli.Context) error {
 
 	go func() {
 		if err := infraController.Run(2, done); err != nil {
-			glog.Fatalf("RancherCUBE: error running infrastructure controller: %s", err.Error())
+			logrus.Fatalf("RancherCUBE: error running infrastructure controller: %s", err.Error())
 		}
 	}()
 
 	go func() {
 		if err := userController.Run(2, done); err != nil {
-			glog.Fatalf("RancherCUBE: error running user controller: %s", err.Error())
+			logrus.Fatalf("RancherCUBE: error running user controller: %s", err.Error())
 		}
 	}()
 

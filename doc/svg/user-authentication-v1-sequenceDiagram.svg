@@ -1,40 +1,40 @@
-<svg id="mermaid-1528360147681" width="100%" xmlns="http://www.w3.org/2000/svg" height="100%" style="max-width:880px;" viewBox="-50 -10 880 566"><style>
+<svg id="mermaid-1528362340081" width="100%" xmlns="http://www.w3.org/2000/svg" height="100%" style="max-width:880px;" viewBox="-50 -10 880 566"><style>
 
 
-#mermaid-1528360147681 .label {
+#mermaid-1528362340081 .label {
   font-family: 'trebuchet ms', verdana, arial;
   color: #333; }
 
-#mermaid-1528360147681 .node rect,
-#mermaid-1528360147681 .node circle,
-#mermaid-1528360147681 .node ellipse,
-#mermaid-1528360147681 .node polygon {
+#mermaid-1528362340081 .node rect,
+#mermaid-1528362340081 .node circle,
+#mermaid-1528362340081 .node ellipse,
+#mermaid-1528362340081 .node polygon {
   fill: #ECECFF;
   stroke: #9370DB;
   stroke-width: 1px; }
 
-#mermaid-1528360147681 .node.clickable {
+#mermaid-1528362340081 .node.clickable {
   cursor: pointer; }
 
-#mermaid-1528360147681 .arrowheadPath {
+#mermaid-1528362340081 .arrowheadPath {
   fill: #333333; }
 
-#mermaid-1528360147681 .edgePath .path {
+#mermaid-1528362340081 .edgePath .path {
   stroke: #333333;
   stroke-width: 1.5px; }
 
-#mermaid-1528360147681 .edgeLabel {
+#mermaid-1528362340081 .edgeLabel {
   background-color: #e8e8e8; }
 
-#mermaid-1528360147681 .cluster rect {
+#mermaid-1528362340081 .cluster rect {
   fill: #ffffde !important;
   stroke: #aaaa33 !important;
   stroke-width: 1px !important; }
 
-#mermaid-1528360147681 .cluster text {
+#mermaid-1528362340081 .cluster text {
   fill: #333; }
 
-#mermaid-1528360147681 div.mermaidTooltip {
+#mermaid-1528362340081 div.mermaidTooltip {
   position: absolute;
   text-align: center;
   max-width: 200px;
@@ -47,304 +47,304 @@
   pointer-events: none;
   z-index: 100; }
 
-#mermaid-1528360147681 .actor {
+#mermaid-1528362340081 .actor {
   stroke: #CCCCFF;
   fill: #ECECFF; }
 
-#mermaid-1528360147681 text.actor {
+#mermaid-1528362340081 text.actor {
   fill: black;
   stroke: none; }
 
-#mermaid-1528360147681 .actor-line {
+#mermaid-1528362340081 .actor-line {
   stroke: grey; }
 
-#mermaid-1528360147681 .messageLine0 {
+#mermaid-1528362340081 .messageLine0 {
   stroke-width: 1.5;
   stroke-dasharray: '2 2';
   marker-end: 'url(#arrowhead)';
   stroke: #333; }
 
-#mermaid-1528360147681 .messageLine1 {
+#mermaid-1528362340081 .messageLine1 {
   stroke-width: 1.5;
   stroke-dasharray: '2 2';
   stroke: #333; }
 
-#mermaid-1528360147681 #arrowhead {
+#mermaid-1528362340081 #arrowhead {
   fill: #333; }
 
-#mermaid-1528360147681 #crosshead path {
+#mermaid-1528362340081 #crosshead path {
   fill: #333 !important;
   stroke: #333 !important; }
 
-#mermaid-1528360147681 .messageText {
+#mermaid-1528362340081 .messageText {
   fill: #333;
   stroke: none; }
 
-#mermaid-1528360147681 .labelBox {
+#mermaid-1528362340081 .labelBox {
   stroke: #CCCCFF;
   fill: #ECECFF; }
 
-#mermaid-1528360147681 .labelText {
+#mermaid-1528362340081 .labelText {
   fill: black;
   stroke: none; }
 
-#mermaid-1528360147681 .loopText {
+#mermaid-1528362340081 .loopText {
   fill: black;
   stroke: none; }
 
-#mermaid-1528360147681 .loopLine {
+#mermaid-1528362340081 .loopLine {
   stroke-width: 2;
   stroke-dasharray: '2 2';
   marker-end: 'url(#arrowhead)';
   stroke: #CCCCFF; }
 
-#mermaid-1528360147681 .note {
+#mermaid-1528362340081 .note {
   stroke: #aaaa33;
   fill: #fff5ad; }
 
-#mermaid-1528360147681 .noteText {
+#mermaid-1528362340081 .noteText {
   fill: black;
   stroke: none;
   font-family: 'trebuchet ms', verdana, arial;
   font-size: 14px; }
 
 
-#mermaid-1528360147681 .section {
+#mermaid-1528362340081 .section {
   stroke: none;
   opacity: 0.2; }
 
-#mermaid-1528360147681 .section0 {
+#mermaid-1528362340081 .section0 {
   fill: rgba(102, 102, 255, 0.49); }
 
-#mermaid-1528360147681 .section2 {
+#mermaid-1528362340081 .section2 {
   fill: #fff400; }
 
-#mermaid-1528360147681 .section1,
-#mermaid-1528360147681 .section3 {
+#mermaid-1528362340081 .section1,
+#mermaid-1528362340081 .section3 {
   fill: white;
   opacity: 0.2; }
 
-#mermaid-1528360147681 .sectionTitle0 {
+#mermaid-1528362340081 .sectionTitle0 {
   fill: #333; }
 
-#mermaid-1528360147681 .sectionTitle1 {
+#mermaid-1528362340081 .sectionTitle1 {
   fill: #333; }
 
-#mermaid-1528360147681 .sectionTitle2 {
+#mermaid-1528362340081 .sectionTitle2 {
   fill: #333; }
 
-#mermaid-1528360147681 .sectionTitle3 {
+#mermaid-1528362340081 .sectionTitle3 {
   fill: #333; }
 
-#mermaid-1528360147681 .sectionTitle {
+#mermaid-1528362340081 .sectionTitle {
   text-anchor: start;
   font-size: 11px;
   text-height: 14px; }
 
 
-#mermaid-1528360147681 .grid .tick {
+#mermaid-1528362340081 .grid .tick {
   stroke: lightgrey;
   opacity: 0.3;
   shape-rendering: crispEdges; }
 
-#mermaid-1528360147681 .grid path {
+#mermaid-1528362340081 .grid path {
   stroke-width: 0; }
 
 
-#mermaid-1528360147681 .today {
+#mermaid-1528362340081 .today {
   fill: none;
   stroke: red;
   stroke-width: 2px; }
 
 
 
-#mermaid-1528360147681 .task {
+#mermaid-1528362340081 .task {
   stroke-width: 2; }
 
-#mermaid-1528360147681 .taskText {
+#mermaid-1528362340081 .taskText {
   text-anchor: middle;
   font-size: 11px; }
 
-#mermaid-1528360147681 .taskTextOutsideRight {
+#mermaid-1528362340081 .taskTextOutsideRight {
   fill: black;
   text-anchor: start;
   font-size: 11px; }
 
-#mermaid-1528360147681 .taskTextOutsideLeft {
+#mermaid-1528362340081 .taskTextOutsideLeft {
   fill: black;
   text-anchor: end;
   font-size: 11px; }
 
 
-#mermaid-1528360147681 .taskText0,
-#mermaid-1528360147681 .taskText1,
-#mermaid-1528360147681 .taskText2,
-#mermaid-1528360147681 .taskText3 {
+#mermaid-1528362340081 .taskText0,
+#mermaid-1528362340081 .taskText1,
+#mermaid-1528362340081 .taskText2,
+#mermaid-1528362340081 .taskText3 {
   fill: white; }
 
-#mermaid-1528360147681 .task0,
-#mermaid-1528360147681 .task1,
-#mermaid-1528360147681 .task2,
-#mermaid-1528360147681 .task3 {
+#mermaid-1528362340081 .task0,
+#mermaid-1528362340081 .task1,
+#mermaid-1528362340081 .task2,
+#mermaid-1528362340081 .task3 {
   fill: #8a90dd;
   stroke: #534fbc; }
 
-#mermaid-1528360147681 .taskTextOutside0,
-#mermaid-1528360147681 .taskTextOutside2 {
+#mermaid-1528362340081 .taskTextOutside0,
+#mermaid-1528362340081 .taskTextOutside2 {
   fill: black; }
 
-#mermaid-1528360147681 .taskTextOutside1,
-#mermaid-1528360147681 .taskTextOutside3 {
+#mermaid-1528362340081 .taskTextOutside1,
+#mermaid-1528362340081 .taskTextOutside3 {
   fill: black; }
 
 
-#mermaid-1528360147681 .active0,
-#mermaid-1528360147681 .active1,
-#mermaid-1528360147681 .active2,
-#mermaid-1528360147681 .active3 {
+#mermaid-1528362340081 .active0,
+#mermaid-1528362340081 .active1,
+#mermaid-1528362340081 .active2,
+#mermaid-1528362340081 .active3 {
   fill: #bfc7ff;
   stroke: #534fbc; }
 
-#mermaid-1528360147681 .activeText0,
-#mermaid-1528360147681 .activeText1,
-#mermaid-1528360147681 .activeText2,
-#mermaid-1528360147681 .activeText3 {
+#mermaid-1528362340081 .activeText0,
+#mermaid-1528362340081 .activeText1,
+#mermaid-1528362340081 .activeText2,
+#mermaid-1528362340081 .activeText3 {
   fill: black !important; }
 
 
-#mermaid-1528360147681 .done0,
-#mermaid-1528360147681 .done1,
-#mermaid-1528360147681 .done2,
-#mermaid-1528360147681 .done3 {
+#mermaid-1528362340081 .done0,
+#mermaid-1528362340081 .done1,
+#mermaid-1528362340081 .done2,
+#mermaid-1528362340081 .done3 {
   stroke: grey;
   fill: lightgrey;
   stroke-width: 2; }
 
-#mermaid-1528360147681 .doneText0,
-#mermaid-1528360147681 .doneText1,
-#mermaid-1528360147681 .doneText2,
-#mermaid-1528360147681 .doneText3 {
+#mermaid-1528362340081 .doneText0,
+#mermaid-1528362340081 .doneText1,
+#mermaid-1528362340081 .doneText2,
+#mermaid-1528362340081 .doneText3 {
   fill: black !important; }
 
 
-#mermaid-1528360147681 .crit0,
-#mermaid-1528360147681 .crit1,
-#mermaid-1528360147681 .crit2,
-#mermaid-1528360147681 .crit3 {
+#mermaid-1528362340081 .crit0,
+#mermaid-1528362340081 .crit1,
+#mermaid-1528362340081 .crit2,
+#mermaid-1528362340081 .crit3 {
   stroke: #ff8888;
   fill: red;
   stroke-width: 2; }
 
-#mermaid-1528360147681 .activeCrit0,
-#mermaid-1528360147681 .activeCrit1,
-#mermaid-1528360147681 .activeCrit2,
-#mermaid-1528360147681 .activeCrit3 {
+#mermaid-1528362340081 .activeCrit0,
+#mermaid-1528362340081 .activeCrit1,
+#mermaid-1528362340081 .activeCrit2,
+#mermaid-1528362340081 .activeCrit3 {
   stroke: #ff8888;
   fill: #bfc7ff;
   stroke-width: 2; }
 
-#mermaid-1528360147681 .doneCrit0,
-#mermaid-1528360147681 .doneCrit1,
-#mermaid-1528360147681 .doneCrit2,
-#mermaid-1528360147681 .doneCrit3 {
+#mermaid-1528362340081 .doneCrit0,
+#mermaid-1528362340081 .doneCrit1,
+#mermaid-1528362340081 .doneCrit2,
+#mermaid-1528362340081 .doneCrit3 {
   stroke: #ff8888;
   fill: lightgrey;
   stroke-width: 2;
   cursor: pointer;
   shape-rendering: crispEdges; }
 
-#mermaid-1528360147681 .doneCritText0,
-#mermaid-1528360147681 .doneCritText1,
-#mermaid-1528360147681 .doneCritText2,
-#mermaid-1528360147681 .doneCritText3 {
+#mermaid-1528362340081 .doneCritText0,
+#mermaid-1528362340081 .doneCritText1,
+#mermaid-1528362340081 .doneCritText2,
+#mermaid-1528362340081 .doneCritText3 {
   fill: black !important; }
 
-#mermaid-1528360147681 .activeCritText0,
-#mermaid-1528360147681 .activeCritText1,
-#mermaid-1528360147681 .activeCritText2,
-#mermaid-1528360147681 .activeCritText3 {
+#mermaid-1528362340081 .activeCritText0,
+#mermaid-1528362340081 .activeCritText1,
+#mermaid-1528362340081 .activeCritText2,
+#mermaid-1528362340081 .activeCritText3 {
   fill: black !important; }
 
-#mermaid-1528360147681 .titleText {
+#mermaid-1528362340081 .titleText {
   text-anchor: middle;
   font-size: 18px;
   fill: black; }
 
-#mermaid-1528360147681 g.classGroup text {
+#mermaid-1528362340081 g.classGroup text {
   fill: #9370DB;
   stroke: none;
   font-family: 'trebuchet ms', verdana, arial;
   font-size: 10px; }
 
-#mermaid-1528360147681 g.classGroup rect {
+#mermaid-1528362340081 g.classGroup rect {
   fill: #ECECFF;
   stroke: #9370DB; }
 
-#mermaid-1528360147681 g.classGroup line {
+#mermaid-1528362340081 g.classGroup line {
   stroke: #9370DB;
   stroke-width: 1; }
 
-#mermaid-1528360147681 .classLabel .box {
+#mermaid-1528362340081 .classLabel .box {
   stroke: none;
   stroke-width: 0;
   fill: #ECECFF;
   opacity: 0.5; }
 
-#mermaid-1528360147681 .classLabel .label {
+#mermaid-1528362340081 .classLabel .label {
   fill: #9370DB;
   font-size: 10px; }
 
-#mermaid-1528360147681 .relation {
+#mermaid-1528362340081 .relation {
   stroke: #9370DB;
   stroke-width: 1;
   fill: none; }
 
-#mermaid-1528360147681 #compositionStart {
+#mermaid-1528362340081 #compositionStart {
   fill: #9370DB;
   stroke: #9370DB;
   stroke-width: 1; }
 
-#mermaid-1528360147681 #compositionEnd {
+#mermaid-1528362340081 #compositionEnd {
   fill: #9370DB;
   stroke: #9370DB;
   stroke-width: 1; }
 
-#mermaid-1528360147681 #aggregationStart {
+#mermaid-1528362340081 #aggregationStart {
   fill: #ECECFF;
   stroke: #9370DB;
   stroke-width: 1; }
 
-#mermaid-1528360147681 #aggregationEnd {
+#mermaid-1528362340081 #aggregationEnd {
   fill: #ECECFF;
   stroke: #9370DB;
   stroke-width: 1; }
 
-#mermaid-1528360147681 #dependencyStart {
+#mermaid-1528362340081 #dependencyStart {
   fill: #9370DB;
   stroke: #9370DB;
   stroke-width: 1; }
 
-#mermaid-1528360147681 #dependencyEnd {
+#mermaid-1528362340081 #dependencyEnd {
   fill: #9370DB;
   stroke: #9370DB;
   stroke-width: 1; }
 
-#mermaid-1528360147681 #extensionStart {
+#mermaid-1528362340081 #extensionStart {
   fill: #9370DB;
   stroke: #9370DB;
   stroke-width: 1; }
 
-#mermaid-1528360147681 #extensionEnd {
+#mermaid-1528362340081 #extensionEnd {
   fill: #9370DB;
   stroke: #9370DB;
   stroke-width: 1; }
 
-#mermaid-1528360147681 .commit-id,
-#mermaid-1528360147681 .commit-msg,
-#mermaid-1528360147681 .branch-label {
+#mermaid-1528362340081 .commit-id,
+#mermaid-1528362340081 .commit-msg,
+#mermaid-1528362340081 .branch-label {
   fill: lightgrey;
   color: lightgrey; }
-</style><style>#mermaid-1528360147681 {
+</style><style>#mermaid-1528362340081 {
     color: rgba(0, 0, 0, 0.65);
     font: normal normal 400 normal 14px / 21px "Monospaced Number", "Chinese Quote", -apple-system, system-ui, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
-  }</style><g></g><g><line id="actor5736" x1="75" y1="5" x2="75" y2="555" class="actor-line" stroke-width="0.5px" stroke="#999"></line><rect x="0" y="0" fill="#eaeaea" stroke="#666" width="150" height="65" rx="3" ry="3" class="actor"></rect><text x="75" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor" style="text-anchor: middle;"><tspan x="75" dy="0">Browser</tspan></text></g><g><line id="actor5737" x1="275" y1="5" x2="275" y2="555" class="actor-line" stroke-width="0.5px" stroke="#999"></line><rect x="200" y="0" fill="#eaeaea" stroke="#666" width="150" height="65" rx="3" ry="3" class="actor"></rect><text x="275" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor" style="text-anchor: middle;"><tspan x="275" dy="0">APIServer</tspan></text></g><g><line id="actor5738" x1="475" y1="5" x2="475" y2="555" class="actor-line" stroke-width="0.5px" stroke="#999"></line><rect x="400" y="0" fill="#eaeaea" stroke="#666" width="150" height="65" rx="3" ry="3" class="actor"></rect><text x="475" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor" style="text-anchor: middle;"><tspan x="475" dy="0">AuthProvider</tspan></text></g><g><line id="actor5739" x1="675" y1="5" x2="675" y2="555" class="actor-line" stroke-width="0.5px" stroke="#999"></line><rect x="600" y="0" fill="#eaeaea" stroke="#666" width="150" height="65" rx="3" ry="3" class="actor"></rect><text x="675" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor" style="text-anchor: middle;"><tspan x="675" dy="0">Kubernetes</tspan></text></g><defs><marker id="arrowhead" refX="5" refY="2" markerWidth="6" markerHeight="4" orient="auto"><path d="M 0,0 V 4 L6,2 Z"></path></marker></defs><defs><marker id="crosshead" markerWidth="15" markerHeight="8" orient="auto" refX="16" refY="4"><path fill="black" stroke="#000000" stroke-width="1px" d="M 9,2 V 6 L16,4 Z" style="stroke-dasharray: 0, 0;"></path><path fill="none" stroke="#000000" stroke-width="1px" d="M 0,1 L 6,7 M 6,1 L 0,7" style="stroke-dasharray: 0, 0;"></path></marker></defs><g><text x="175" y="93" class="messageText" style="text-anchor: middle;">1. Request with cookie or header which contain JWT token</text><line x1="75" y1="100" x2="275" y2="100" class="messageLine0" stroke-width="2" stroke="black" marker-end="url(#arrowhead)" style="fill: none;"></line></g><g><rect x="270" y="102" fill="#f4f4f4" stroke="#666" width="10" height="368" rx="0" ry="0"></rect></g><g><text x="377.5" y="128" class="messageText" style="text-anchor: middle;">2. Switch auth provider &amp; Get token from cookie or header</text><line x1="280" y1="135" x2="475" y2="135" class="messageLine0" stroke-width="2" stroke="black" marker-end="url(#arrowhead)" style="fill: none;"></line></g><g><rect x="470" y="137" fill="#f4f4f4" stroke="#666" width="10" height="298" rx="0" ry="0"></rect></g><g><text x="577.5" y="163" class="messageText" style="text-anchor: middle;">3. Authentication JWT token &amp; Set Impersonate-User header</text><line x1="480" y1="170" x2="675" y2="170" class="messageLine0" stroke-width="2" stroke="black" marker-end="url(#arrowhead)" style="fill: none;"></line></g><g><rect x="670" y="172" fill="#f4f4f4" stroke="#666" width="10" height="228" rx="0" ry="0"></rect></g><g><text x="680" y="198" class="messageText" style="text-anchor: middle;">4. Is the JWT signature valid?</text><path d="M 680,205 C 740,195 740,235 680,225" class="messageLine0" stroke-width="2" stroke="black" marker-end="url(#arrowhead)" style="fill: none;"></path></g><g><text x="680" y="263" class="messageText" style="text-anchor: middle;">5. Has the JWT expired?</text><path d="M 680,270 C 740,260 740,300 680,290" class="messageLine0" stroke-width="2" stroke="black" marker-end="url(#arrowhead)" style="fill: none;"></path></g><g><text x="680" y="328" class="messageText" style="text-anchor: middle;">6. Impersonate-User authorized?</text><path d="M 680,335 C 740,325 740,365 680,355" class="messageLine0" stroke-width="2" stroke="black" marker-end="url(#arrowhead)" style="fill: none;"></path></g><g><text x="575" y="393" class="messageText" style="text-anchor: middle;">7. Authorized perform action and return result</text><line x1="670" y1="400" x2="480" y2="400" class="messageLine1" stroke-width="2" stroke="black" marker-end="url(#arrowhead)" style="stroke-dasharray: 3, 3; fill: none;"></line></g><g><text x="375" y="428" class="messageText" style="text-anchor: middle;">8. Return result</text><line x1="470" y1="435" x2="280" y2="435" class="messageLine1" stroke-width="2" stroke="black" style="stroke-dasharray: 3, 3; fill: none;"></line></g><g><text x="172.5" y="463" class="messageText" style="text-anchor: middle;">9. Return result</text><line x1="270" y1="470" x2="75" y2="470" class="messageLine1" stroke-width="2" stroke="black" style="stroke-dasharray: 3, 3; fill: none;"></line></g><g><rect x="0" y="490" fill="#eaeaea" stroke="#666" width="150" height="65" rx="3" ry="3" class="actor"></rect><text x="75" y="522.5" dominant-baseline="central" alignment-baseline="central" class="actor" style="text-anchor: middle;"><tspan x="75" dy="0">Browser</tspan></text></g><g><rect x="200" y="490" fill="#eaeaea" stroke="#666" width="150" height="65" rx="3" ry="3" class="actor"></rect><text x="275" y="522.5" dominant-baseline="central" alignment-baseline="central" class="actor" style="text-anchor: middle;"><tspan x="275" dy="0">APIServer</tspan></text></g><g><rect x="400" y="490" fill="#eaeaea" stroke="#666" width="150" height="65" rx="3" ry="3" class="actor"></rect><text x="475" y="522.5" dominant-baseline="central" alignment-baseline="central" class="actor" style="text-anchor: middle;"><tspan x="475" dy="0">AuthProvider</tspan></text></g><g><rect x="600" y="490" fill="#eaeaea" stroke="#666" width="150" height="65" rx="3" ry="3" class="actor"></rect><text x="675" y="522.5" dominant-baseline="central" alignment-baseline="central" class="actor" style="text-anchor: middle;"><tspan x="675" dy="0">Kubernetes</tspan></text></g></svg>
+  }</style><g></g><g><line id="actor5748" x1="75" y1="5" x2="75" y2="555" class="actor-line" stroke-width="0.5px" stroke="#999"></line><rect x="0" y="0" fill="#eaeaea" stroke="#666" width="150" height="65" rx="3" ry="3" class="actor"></rect><text x="75" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor" style="text-anchor: middle;"><tspan x="75" dy="0">Browser</tspan></text></g><g><line id="actor5749" x1="275" y1="5" x2="275" y2="555" class="actor-line" stroke-width="0.5px" stroke="#999"></line><rect x="200" y="0" fill="#eaeaea" stroke="#666" width="150" height="65" rx="3" ry="3" class="actor"></rect><text x="275" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor" style="text-anchor: middle;"><tspan x="275" dy="0">APIServer</tspan></text></g><g><line id="actor5750" x1="475" y1="5" x2="475" y2="555" class="actor-line" stroke-width="0.5px" stroke="#999"></line><rect x="400" y="0" fill="#eaeaea" stroke="#666" width="150" height="65" rx="3" ry="3" class="actor"></rect><text x="475" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor" style="text-anchor: middle;"><tspan x="475" dy="0">AuthProvider</tspan></text></g><g><line id="actor5751" x1="675" y1="5" x2="675" y2="555" class="actor-line" stroke-width="0.5px" stroke="#999"></line><rect x="600" y="0" fill="#eaeaea" stroke="#666" width="150" height="65" rx="3" ry="3" class="actor"></rect><text x="675" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor" style="text-anchor: middle;"><tspan x="675" dy="0">Kubernetes</tspan></text></g><defs><marker id="arrowhead" refX="5" refY="2" markerWidth="6" markerHeight="4" orient="auto"><path d="M 0,0 V 4 L6,2 Z"></path></marker></defs><defs><marker id="crosshead" markerWidth="15" markerHeight="8" orient="auto" refX="16" refY="4"><path fill="black" stroke="#000000" stroke-width="1px" d="M 9,2 V 6 L16,4 Z" style="stroke-dasharray: 0, 0;"></path><path fill="none" stroke="#000000" stroke-width="1px" d="M 0,1 L 6,7 M 6,1 L 0,7" style="stroke-dasharray: 0, 0;"></path></marker></defs><g><text x="175" y="93" class="messageText" style="text-anchor: middle;">1. Request with cookie or header which contain JWT token</text><line x1="75" y1="100" x2="275" y2="100" class="messageLine0" stroke-width="2" stroke="black" marker-end="url(#arrowhead)" style="fill: none;"></line></g><g><rect x="270" y="102" fill="#f4f4f4" stroke="#666" width="10" height="368" rx="0" ry="0"></rect></g><g><text x="377.5" y="128" class="messageText" style="text-anchor: middle;">2. Switch auth provider &amp; Get token from cookie or header</text><line x1="280" y1="135" x2="475" y2="135" class="messageLine0" stroke-width="2" stroke="black" marker-end="url(#arrowhead)" style="fill: none;"></line></g><g><rect x="470" y="137" fill="#f4f4f4" stroke="#666" width="10" height="298" rx="0" ry="0"></rect></g><g><text x="577.5" y="163" class="messageText" style="text-anchor: middle;">3. Authentication JWT token &amp; Set Impersonate-User header</text><line x1="480" y1="170" x2="675" y2="170" class="messageLine0" stroke-width="2" stroke="black" marker-end="url(#arrowhead)" style="fill: none;"></line></g><g><rect x="670" y="172" fill="#f4f4f4" stroke="#666" width="10" height="228" rx="0" ry="0"></rect></g><g><text x="680" y="198" class="messageText" style="text-anchor: middle;">4. Is the JWT signature valid?</text><path d="M 680,205 C 740,195 740,235 680,225" class="messageLine0" stroke-width="2" stroke="black" marker-end="url(#arrowhead)" style="fill: none;"></path></g><g><text x="680" y="263" class="messageText" style="text-anchor: middle;">5. Has the JWT expired?</text><path d="M 680,270 C 740,260 740,300 680,290" class="messageLine0" stroke-width="2" stroke="black" marker-end="url(#arrowhead)" style="fill: none;"></path></g><g><text x="680" y="328" class="messageText" style="text-anchor: middle;">6. Impersonate-User authorized?</text><path d="M 680,335 C 740,325 740,365 680,355" class="messageLine0" stroke-width="2" stroke="black" marker-end="url(#arrowhead)" style="fill: none;"></path></g><g><text x="575" y="393" class="messageText" style="text-anchor: middle;">7. Authorized perform action and return result</text><line x1="670" y1="400" x2="480" y2="400" class="messageLine1" stroke-width="2" stroke="black" marker-end="url(#arrowhead)" style="stroke-dasharray: 3, 3; fill: none;"></line></g><g><text x="375" y="428" class="messageText" style="text-anchor: middle;">8. Return result</text><line x1="470" y1="435" x2="280" y2="435" class="messageLine1" stroke-width="2" stroke="black" marker-end="url(#arrowhead)" style="stroke-dasharray: 3, 3; fill: none;"></line></g><g><text x="172.5" y="463" class="messageText" style="text-anchor: middle;">9. Return result</text><line x1="270" y1="470" x2="75" y2="470" class="messageLine1" stroke-width="2" stroke="black" marker-end="url(#arrowhead)" style="stroke-dasharray: 3, 3; fill: none;"></line></g><g><rect x="0" y="490" fill="#eaeaea" stroke="#666" width="150" height="65" rx="3" ry="3" class="actor"></rect><text x="75" y="522.5" dominant-baseline="central" alignment-baseline="central" class="actor" style="text-anchor: middle;"><tspan x="75" dy="0">Browser</tspan></text></g><g><rect x="200" y="490" fill="#eaeaea" stroke="#666" width="150" height="65" rx="3" ry="3" class="actor"></rect><text x="275" y="522.5" dominant-baseline="central" alignment-baseline="central" class="actor" style="text-anchor: middle;"><tspan x="275" dy="0">APIServer</tspan></text></g><g><rect x="400" y="490" fill="#eaeaea" stroke="#666" width="150" height="65" rx="3" ry="3" class="actor"></rect><text x="475" y="522.5" dominant-baseline="central" alignment-baseline="central" class="actor" style="text-anchor: middle;"><tspan x="475" dy="0">AuthProvider</tspan></text></g><g><rect x="600" y="490" fill="#eaeaea" stroke="#666" width="150" height="65" rx="3" ry="3" class="actor"></rect><text x="675" y="522.5" dominant-baseline="central" alignment-baseline="central" class="actor" style="text-anchor: middle;"><tspan x="675" dy="0">Kubernetes</tspan></text></g></svg>

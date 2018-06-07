@@ -1,4 +1,4 @@
-package unsecure
+package insecure
 
 import (
 	"crypto/rsa"
