@@ -7,6 +7,7 @@ import (
 	"github.com/rancher/go-rancher/client"
 	"k8s.io/api/core/v1"
 	"github.com/cnrancher/cube-apiserver/util"
+	"github.com/Sirupsen/logrus"
 )
 
 var KubeConfigLocation string
@@ -18,6 +19,7 @@ type schemaType struct {
 	Dashboard string
 	Longhorn  string
 	BaseInfo  string
+	RancherVM string
 }
 
 func GetSchemaType() *schemaType {
@@ -27,6 +29,7 @@ func GetSchemaType() *schemaType {
 			Dashboard: "dashboard",
 			Longhorn:  "longhorn",
 			BaseInfo:  "baseinfo",
+			RancherVM: "ranchervm",
 		}
 	}
 
@@ -61,6 +64,7 @@ type Infrastructure struct {
 
 	Dashboard *v1alpha1.Infrastructure `json:"dashboard"`
 	Longhorn  *v1alpha1.Infrastructure `json:"longhorn"`
+	RancherVM *v1alpha1.Infrastructure `json:"ranchervm"`
 	Host      string                   `json:"host"`
 }
 
@@ -102,9 +106,10 @@ func NewSchema() *client.Schemas {
 
 	nodeSchema(schemas.AddType("node", Node{}))
 	clusterSchema(schemas.AddType("cluster", Cluster{}))
-	configMapSchema(schemas.AddType(GetSchemaType().Configmap, ConfigMap{}))
+	//configMapSchema(schemas.AddType(GetSchemaType().Configmap, ConfigMap{}))
 	dashboardSchema(schemas.AddType(GetSchemaType().Dashboard, Infrastructure{}))
 	longhornSchema(schemas.AddType(GetSchemaType().Longhorn, Infrastructure{}))
+	rancherVMSchema(schemas.AddType(GetSchemaType().RancherVM, Infrastructure{}))
 	baseInfoschema(schemas.AddType(GetSchemaType().BaseInfo, BaseInfo{}))
 	return schemas
 }
@@ -175,6 +180,17 @@ func longhornSchema(longhorn *client.Schema) {
 
 }
 
+func rancherVMSchema(longhorn *client.Schema) {
+	longhorn.CollectionMethods = []string{"GET", "POST"}
+	longhorn.ResourceMethods = []string{"GET", "DELETE"}
+
+	longhorn.ResourceFields[GetSchemaType().RancherVM] = client.Field{
+		Type:     "struct",
+		Nullable: true,
+	}
+
+}
+
 func toInfrastructureCollection(list *v1alpha1.InfrastructureList, infraType string) *client.GenericCollection {
 	data := []interface{}{}
 	for _, item := range list.Items {
@@ -188,9 +204,12 @@ func toInfrastructureResource(infra *v1alpha1.Infrastructure, infraType string, 
 	host := ip
 
 	if service != nil {
+		logrus.Infof("===========aaaaaa============%s", "toInfrastructureResource")
 		port := service.Spec.Ports[0].NodePort
 		host = host + ":" + util.Int32ToString(port)
+		logrus.Infof("===========host============%s", host)
 	}
+	logrus.Infof("===========bbbb============%s", "toInfrastructureResource")
 	if name == "" {
 		return nil
 	}
@@ -200,9 +219,10 @@ func toInfrastructureResource(infra *v1alpha1.Infrastructure, infraType string, 
 			Type:    infraType,
 			Actions: map[string]string{},
 		},
+		Host:      host,
 		Dashboard: infra,
 		Longhorn:  infra,
-		Host:      host,
+		RancherVM: infra,
 	}
 }
 

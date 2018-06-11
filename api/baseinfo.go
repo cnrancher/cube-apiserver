@@ -17,13 +17,3 @@ func (s *Server) BaseInfoGet(w http.ResponseWriter, req *http.Request) error {
 	apiContext.Write(toBaseInfo(baseInfo))
 	return nil
 }
-
-//func (s *Server) ConfigMapList(rw http.ResponseWriter, req *http.Request) (err error) {
-//	apiContext := api.GetApiContext(req)
-//	cms, err := s.c.ConfigMapList()
-//	if err != nil {
-//		return err
-//	}
-//	apiContext.Write(toConfigMapCollection(cms))
-//	return nil
-//}

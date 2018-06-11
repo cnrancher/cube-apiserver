@@ -381,6 +381,7 @@ func (c *InfraController) bundleCreate(infra *infrav1alpha1.Infrastructure) (*ap
 	case "Longhorn":
 		return c.createLonghorn(infra)
 	case "RancherVM":
+		logrus.Infof("=====zzzz=====infra===%s", infra.Name)
 		return c.createRancherVM(infra)
 	}
 	return nil, errors.New("error bundle create: infrastructure type " + infra.Spec.InfraKind + " is invalid")
@@ -395,6 +396,7 @@ func (c *InfraController) bundleUpdate(infra *infrav1alpha1.Infrastructure) (*ap
 	case "Longhorn":
 		return c.updateLonghorn(infra)
 	case "RancherVM":
+		logrus.Infof("=====yyyy=====infra===%s", infra.Name)
 		return c.updateRancherVM(infra)
 	}
 	return nil, errors.New("error bundle update: infrastructure type " + infra.Spec.InfraKind + " is invalid")
@@ -410,20 +412,19 @@ func (c *InfraController) detectService(infra *infrav1alpha1.Infrastructure) (bo
 		serviceName = "kubernetes-dashboard"
 		namespace = InfrastructureNamespace
 	case "Longhorn":
-		// TODO: need change to the real name
 		serviceName = "longhorn-frontend"
 		namespace = LonghornNamespace
 	case "RancherVM":
-		// TODO: need change to the real name
-		serviceName = "rancher-vm"
+		serviceName = "ranchervm-frontend"
+		namespace = RancherVMNamespace
 	default:
 		return false, errors.New("error detect service: infrastructure type " + infra.Spec.InfraKind + " is invalid")
 	}
 
-	// TODO: need change to serviceInformer
 	_, err := c.serviceLister.Services(namespace).Get(serviceName)
 
 	if err != nil {
+		logrus.Infof("=====jjjjjjjj=====infra===%s", infra.Name)
 		return false, err
 	}
 
@@ -1157,7 +1158,7 @@ func (c *InfraController) createLonghorn(infra *infrav1alpha1.Infrastructure) (*
 		}
 
 		//var replicas int32 = 1
-		replicas := int32(1)
+		//replicas := int32(1)
 		// create longhorn ui deployment
 		deployment, err := c.clientset.AppsV1().Deployments(LonghornNamespace).Create(&appsv1.Deployment{
 			ObjectMeta: metav1.ObjectMeta{
@@ -1175,7 +1176,7 @@ func (c *InfraController) createLonghorn(infra *infrav1alpha1.Infrastructure) (*
 				},
 			},
 			Spec: appsv1.DeploymentSpec{
-				Replicas: &replicas,
+				Replicas: /*&replicas*/ infra.Spec.Replicas,
 				Selector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{
 						"app": "longhorn-ui",
@@ -1313,6 +1314,76 @@ func (c *InfraController) createRancherVM(infra *infrav1alpha1.Infrastructure) (
 			return nil, err
 		}
 
+		// create ip controller daemonset
+		_, err = c.clientset.ExtensionsV1beta1().DaemonSets(RancherVMNamespace).Create(&v1beta1.DaemonSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "ip-controller",
+				Namespace: RancherVMNamespace,
+				OwnerReferences: []metav1.OwnerReference{
+					*metav1.NewControllerRef(infra, schema.GroupVersionKind{
+						Group:   infrav1alpha1.SchemeGroupVersion.Group,
+						Version: infrav1alpha1.SchemeGroupVersion.Version,
+						Kind:    "Infrastructure",
+					}),
+				},
+			},
+			Spec: v1beta1.DaemonSetSpec{
+				Selector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"app": "ip-controller",
+					},
+				},
+				Template: corev1.PodTemplateSpec{
+					ObjectMeta: metav1.ObjectMeta{
+						Labels: map[string]string{
+							"app": "ip-controller",
+						},
+					},
+					Spec: corev1.PodSpec{
+						HostNetwork: true,
+						Containers: []corev1.Container{
+							{
+								Name:            "ip-controller",
+								Image:           "rancher/vm",
+								ImagePullPolicy: "Always",
+								Command: []string{
+									"sh",
+									"-c",
+								},
+								Args: []string{
+									"exec /ranchervm -ip -nodename ${MY_NODE_NAME} -v 3",
+								},
+								Env: []corev1.EnvVar{
+									{
+										Name: "MY_NODE_NAME",
+										ValueFrom: &corev1.EnvVarSource{
+											FieldRef: &corev1.ObjectFieldSelector{FieldPath: "spec.nodeName"},
+										},
+									},
+								},
+							},
+							{
+								Name:            "arp-scanner",
+								Image:           "rancher/vm",
+								ImagePullPolicy: "Always",
+								Command: []string{
+									"bash",
+									"-c",
+								},
+								Args: []string{
+									`while true; do iface=br0; inet_addr=$(ifconfig $iface | grep "inet " | awk '{print $2}' | cut -d':' -f2);inet_mask=$(ifconfig $iface | grep "inet " | awk '{print $4}' | cut -d':' -f2);ips="$(arp-scan -interface=$iface $inet_addr:$inet_mask | awk -F'\t' '$2 ~ /[0-9a-f][0-9a-f]:/ {print $1}')";for ip in $ips; do ping -c 1 -t 1 $ip &>/dev/null & done; sleep 5; done`,
+								},
+							},
+						},
+						ServiceAccountName: "ranchervm-service-account",
+					},
+				},
+			},
+		})
+		if err != nil && !k8serrors.IsAlreadyExists(err) {
+			return nil, err
+		}
+
 		// create ranchervm backend service
 		_, err = c.clientset.CoreV1().Services(RancherVMNamespace).Create(&corev1.Service{
 			ObjectMeta: metav1.ObjectMeta{
@@ -1376,7 +1447,7 @@ func (c *InfraController) createRancherVM(infra *infrav1alpha1.Infrastructure) (
 		}
 
 		// create ranchervm controller deployment
-		controllerReplica := int32(2)
+		//controllerReplica := int32(2)
 		_, err = c.clientset.AppsV1().Deployments(RancherVMNamespace).Create(&appsv1.Deployment{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "ranchervm-controller",
@@ -1390,7 +1461,12 @@ func (c *InfraController) createRancherVM(infra *infrav1alpha1.Infrastructure) (
 				},
 			},
 			Spec: appsv1.DeploymentSpec{
-				Replicas: &controllerReplica /*infra.Spec.Replicas*/ ,
+				Replicas: infra.Spec.Replicas,
+				Selector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"app": "ranchervm-controller",
+					},
+				},
 				Template: corev1.PodTemplateSpec{
 					ObjectMeta: metav1.ObjectMeta{
 						Labels: map[string]string{
@@ -1453,7 +1529,12 @@ func (c *InfraController) createRancherVM(infra *infrav1alpha1.Infrastructure) (
 				},
 			},
 			Spec: appsv1.DeploymentSpec{
-				Replicas: &controllerReplica,
+				Replicas: infra.Spec.Replicas,
+				Selector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"app": "ranchervm-backend",
+					},
+				},
 				Template: corev1.PodTemplateSpec{
 					ObjectMeta: metav1.ObjectMeta{
 						Labels: map[string]string{
@@ -1514,7 +1595,12 @@ func (c *InfraController) createRancherVM(infra *infrav1alpha1.Infrastructure) (
 				},
 			},
 			Spec: appsv1.DeploymentSpec{
-				Replicas: &controllerReplica,
+				Replicas: infra.Spec.Replicas,
+				Selector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"app": "ranchervm-frontend",
+					},
+				},
 				Template: corev1.PodTemplateSpec{
 					ObjectMeta: metav1.ObjectMeta{
 						Labels: map[string]string{
@@ -1555,85 +1641,6 @@ func (c *InfraController) createRancherVM(infra *infrav1alpha1.Infrastructure) (
 								},
 							},
 						},
-					},
-				},
-			},
-		})
-		if err != nil && !k8serrors.IsAlreadyExists(err) {
-			return nil, err
-		}
-
-		// create ip controller daemonset
-		_, err = c.clientset.ExtensionsV1beta1().DaemonSets(RancherVMNamespace).Create(&v1beta1.DaemonSet{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "ip-controller",
-				Namespace: RancherVMNamespace,
-				OwnerReferences: []metav1.OwnerReference{
-					*metav1.NewControllerRef(infra, schema.GroupVersionKind{
-						Group:   infrav1alpha1.SchemeGroupVersion.Group,
-						Version: infrav1alpha1.SchemeGroupVersion.Version,
-						Kind:    "Infrastructure",
-					}),
-				},
-			},
-			Spec: v1beta1.DaemonSetSpec{
-				Selector: &metav1.LabelSelector{
-					MatchLabels: map[string]string{
-						"app": "ip-controller",
-					},
-				},
-				Template: corev1.PodTemplateSpec{
-					ObjectMeta: metav1.ObjectMeta{
-						Labels: map[string]string{
-							"app": "ip-controller",
-						},
-					},
-					Spec: corev1.PodSpec{
-						HostNetwork: true,
-						Containers: []corev1.Container{
-							{
-								Name:            "ip-controller",
-								Image:           "rancher/vm",
-								ImagePullPolicy: "Always",
-								Command: []string{
-									"sh",
-									"-c",
-								},
-								Args: []string{
-									"exec /ranchervm -ip -nodename ${MY_NODE_NAME} -v 3",
-								},
-								Env: []corev1.EnvVar{
-									{
-										Name: "MY_NODE_NAME",
-										ValueFrom: &corev1.EnvVarSource{
-											FieldRef: &corev1.ObjectFieldSelector{FieldPath: "spec.nodeName"},
-										},
-									},
-								},
-							},
-							{
-								Name:            "arp-scanner",
-								Image:           "rancher/vm",
-								ImagePullPolicy: "Always",
-								Command: []string{
-									"sh",
-									"-c",
-								},
-								Args: []string{
-									"while true; do",
-									"iface=br0;",
-									"inet_addr=$(ifconfig $iface | grep \"inet \" | awk '{print $2}' | cut -d':' -f2);",
-									"inet_mask=$(ifconfig $iface | grep \"inet \" | awk '{print $4}' | cut -d':' -f2);",
-									"ips=\"$(arp-scan -interface = $iface $inet_addr:$inet_mask | awk -F'\t' '$2 ~ /[0-9a-f][0-9a-f]:/{print $1})\";",
-									"for ip in $ips; do ",
-									"ping -c 1 -t 1 $ip &>/dev/null &",
-									"done;",
-									"sleep 5;",
-									"done",
-								},
-							},
-						},
-						ServiceAccountName: "ranchervm-service-account",
 					},
 				},
 			},

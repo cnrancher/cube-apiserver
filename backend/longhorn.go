@@ -9,6 +9,10 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
+var (
+	lhReplicas int32 = 1
+)
+
 const (
 	LonghornGroup   = "longhorn.rancher.io"
 	LonghornVersion = "v1alpha1"
@@ -147,10 +151,6 @@ func (c *ClientGenerator) LonghornEngineCRDDeploy() error {
 	return err
 }
 
-var (
-	lhReplicas int32 = 1
-)
-
 func (c *ClientGenerator) LonghornList() (*v1alpha1.InfrastructureList, error) {
 	info, err := getConfigMapInfo(c)
 	if err != nil {
@@ -179,12 +179,6 @@ func (c *ClientGenerator) LonghornDeploy() (*v1alpha1.Infrastructure, error) {
 		return nil, err
 	}
 
-	// generate & deploy ingress resources for visit
-	//err = c.LonghornIngressDeploy()
-	//if err != nil {
-	//	return nil, err
-	//}
-
 	lh, err := c.Infraclientset.CubeV1alpha1().Infrastructures(info.Data[langhornNamespace]).Create(&v1alpha1.Infrastructure{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      info.Data[langhornName],
@@ -201,12 +195,6 @@ func (c *ClientGenerator) LonghornDeploy() (*v1alpha1.Infrastructure, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	//watcher, err := c.Infraclientset.CubeV1alpha1().Infrastructures(info.Data[langhornNamespace]).Watch(metav1.ListOptions{})
-	//if err != nil {
-	//	return nil, err
-	//}
-	//loop(watcher, lh)
 
 	return lh, nil
 }

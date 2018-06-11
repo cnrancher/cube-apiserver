@@ -81,7 +81,7 @@ func (c *ClientGenerator) BaseInfoGet() ([]map[string]string, error) {
 			"desc":   info.Data[rancherVMDesc],
 			"status": status[info.Data[rancherVMName]],
 			"state":  state[info.Data[rancherVMName]],
-			"url":    "",
+			"url":    "/ranchervms",
 		},
 	}, nil
 }
@@ -100,6 +100,12 @@ func (c *ClientGenerator) statusGet() error {
 		return errors.Wrap(err, "failed to read longhorn info")
 	}
 	checkStatus(lhlist, controller.LonghornName)
+
+	vmlist, err := c.RancherVMList()
+	if err != nil {
+		return errors.Wrap(err, "failed to read longhorn info")
+	}
+	checkStatus(vmlist, controller.RancherVMName)
 
 	return nil
 }

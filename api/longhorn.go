@@ -30,7 +30,7 @@ func (s *Server) LonghornGet(rw http.ResponseWriter, req *http.Request) error {
 
 	err = s.c.ServiceGet(controller.LonghornNamespace, "longhorn-frontend")
 	if err != nil {
-		return errors.Wrap(err, "failed to get service")
+		return errors.Wrap(err, "failed to get longhorn service")
 	}
 
 	ip, err := s.c.NodeIPGet()
@@ -51,7 +51,7 @@ func (s *Server) LonghornCreate(rw http.ResponseWriter, req *http.Request) error
 
 	err = s.c.ServiceGet(controller.LonghornNamespace, "longhorn-frontend")
 	if err != nil {
-		return errors.Wrap(err, "failed to get service")
+		return errors.Wrap(err, "failed to get longhorn service")
 	}
 
 	ip, err := s.c.NodeIPGet()

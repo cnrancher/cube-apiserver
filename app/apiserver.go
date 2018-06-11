@@ -61,6 +61,11 @@ func startAPIServer(c *cli.Context) error {
 	clientGenerator.LonghornReplicaCRDDeploy()
 	clientGenerator.LonghornSettingCRDDeploy()
 	clientGenerator.LonghornVolumeCRDDeploy()
+
+	clientGenerator.CredentialCRDDeploy()
+	clientGenerator.ArptableCRDDeploy()
+	clientGenerator.VirtualMachineCRDDeploy()
+
 	// generate & deploy config map resources for base info
 	clientGenerator.ConfigMapDeploy()
 

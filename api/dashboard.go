@@ -30,7 +30,7 @@ func (s *Server) DashboardGet(rw http.ResponseWriter, req *http.Request) error {
 
 	err = s.c.ServiceGet(controller.DashboardNamespace, "kubernetes-dashboard")
 	if err != nil {
-		return errors.Wrap(err, "failed to get service")
+		return errors.Wrap(err, "failed to get dashboard service")
 	}
 
 	ip, err := s.c.NodeIPGet()
@@ -51,7 +51,7 @@ func (s *Server) DashboardCreate(rw http.ResponseWriter, req *http.Request) erro
 
 	err = s.c.ServiceGet(controller.DashboardNamespace, "kubernetes-dashboard")
 	if err != nil {
-		return errors.Wrap(err, "failed to get service")
+		return errors.Wrap(err, "failed to get dashboard service")
 	}
 
 	ip, err := s.c.NodeIPGet()

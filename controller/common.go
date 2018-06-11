@@ -41,7 +41,7 @@ const (
 	LonghornNamespace = "longhorn-system"
 	LanghornDesc      = "Longhorn is a distributed block storage system for Kubernetes powered by Rancher Labs."
 
-	RancherVMName      = "rancher-vm"
+	RancherVMName      = "ranchervm-frontend"
 	RancherVMNamespace = "ranchervm-system"
 	RancherVMDesc      = ""
 )
