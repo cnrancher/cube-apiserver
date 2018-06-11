@@ -22,20 +22,22 @@ type CubeConfig struct {
 
 type schemaType struct {
 	Configmap string
-	Dashboard string
-	Longhorn  string
-	BaseInfo  string
-	RancherVM string
+	//Dashboard      string
+	//Longhorn       string
+	//RancherVM      string
+	BaseInfo       string
+	Infrastructure string
 }
 
 func GetSchemaType() *schemaType {
 	if sType == nil {
 		sType = &schemaType{
 			Configmap: "configmap",
-			Dashboard: "dashboard",
-			Longhorn:  "longhorn",
-			BaseInfo:  "baseinfo",
-			RancherVM: "ranchervm",
+			//Dashboard:      "dashboard",
+			//Longhorn:       "longhorn",
+			BaseInfo: "baseinfo",
+			//RancherVM:      "ranchervm",
+			Infrastructure: "infrastructure",
 		}
 	}
 
@@ -68,13 +70,9 @@ type BaseInfo struct {
 type Infrastructure struct {
 	client.Resource
 
-	Dashboard *v1alpha1.Infrastructure `json:"dashboard"`
-	Longhorn  *v1alpha1.Infrastructure `json:"longhorn"`
-	RancherVM *v1alpha1.Infrastructure `json:"ranchervm"`
-	Host      string                   `json:"host"`
-
-	//Name string `json:"name"`
-	//Size string `json:"size"`
+	Host  string                   `json:"host"`
+	Kind  string                   `json:"kind"`
+	Infra *v1alpha1.Infrastructure `json:"infrastructure"`
 }
 
 type Cluster struct {
@@ -92,18 +90,18 @@ type Token struct {
 	Token     string `json:"token"`
 }
 
+type Result struct {
+	client.Resource
+
+	Message string `json:"message"`
+}
+
 func NewServer(c *backend.ClientGenerator, kubeConfig string) *Server {
 	KubeConfigLocation = kubeConfig
 	s := &Server{
 		c: c,
 	}
 	return s
-}
-
-type Result struct {
-	client.Resource
-
-	Message string `json:"message"`
 }
 
 func NewSchema() *client.Schemas {
@@ -115,10 +113,9 @@ func NewSchema() *client.Schemas {
 
 	nodeSchema(schemas.AddType("node", Node{}))
 	clusterSchema(schemas.AddType("cluster", Cluster{}))
-	dashboardSchema(schemas.AddType(GetSchemaType().Dashboard, Infrastructure{}))
-	longhornSchema(schemas.AddType(GetSchemaType().Longhorn, Infrastructure{}))
-	rancherVMSchema(schemas.AddType(GetSchemaType().RancherVM, Infrastructure{}))
+
 	baseInfoschema(schemas.AddType(GetSchemaType().BaseInfo, BaseInfo{}))
+	infraSchema(schemas.AddType(GetSchemaType().Infrastructure, Infrastructure{}))
 	return schemas
 }
 
@@ -156,60 +153,31 @@ func baseInfoschema(cm *client.Schema) {
 	}
 }
 
-func dashboardSchema(dashboard *client.Schema) {
-	dashboard.CollectionMethods = []string{"GET", "POST"}
-	dashboard.ResourceMethods = []string{"GET", "DELETE"}
+func infraSchema(infra *client.Schema) {
+	infra.CollectionMethods = []string{"GET", "POST"}
+	infra.ResourceMethods = []string{"GET", "DELETE"}
 
-	dashboard.ResourceFields[GetSchemaType().Dashboard] = client.Field{
+	infra.ResourceFields[GetSchemaType().Infrastructure] = client.Field{
 		Type:     "struct",
 		Nullable: true,
 	}
 
+	kind := infra.ResourceFields["kind"]
+	kind.Create = true
+	kind.Required = true
+	kind.Unique = true
+	infra.ResourceFields["kind"] = kind
 }
 
-func longhornSchema(longhorn *client.Schema) {
-	longhorn.CollectionMethods = []string{"GET", "POST"}
-	longhorn.ResourceMethods = []string{"GET", "DELETE"}
-
-	longhorn.ResourceFields[GetSchemaType().Longhorn] = client.Field{
-		Type:     "struct",
-		Nullable: true,
-	}
-
-}
-
-func rancherVMSchema(ranchervm *client.Schema) {
-	ranchervm.CollectionMethods = []string{"GET", "POST"}
-	ranchervm.ResourceMethods = []string{"GET", "DELETE"}
-
-	ranchervm.ResourceFields[GetSchemaType().RancherVM] = client.Field{
-		Type:     "struct",
-		Nullable: true,
-	}
-
-	//volumeName := volume.ResourceFields["name"]
-	//volumeName.Create = true
-	//volumeName.Required = true
-	//volumeName.Unique = true
-	//volume.ResourceFields["name"] = volumeName
-	//
-	//volumeSize := volume.ResourceFields["size"]
-	//volumeSize.Create = true
-	//volumeSize.Required = true
-	//volumeSize.Default = "100G"
-	//volume.ResourceFields["size"] = volumeSize
-
-}
-
-func toInfrastructureCollection(list *v1alpha1.InfrastructureList, infraType string) *client.GenericCollection {
+func toInfrastructureCollection(list *v1alpha1.InfrastructureList) *client.GenericCollection {
 	data := []interface{}{}
 	for _, item := range list.Items {
-		data = append(data, toInfrastructureResource(&item, infraType, nil, ""))
+		data = append(data, toInfrastructureResource(&item, nil, ""))
 	}
-	return &client.GenericCollection{Data: data, Collection: client.Collection{ResourceType: infraType}}
+	return &client.GenericCollection{Data: data, Collection: client.Collection{ResourceType: GetSchemaType().Infrastructure}}
 }
 
-func toInfrastructureResource(infra *v1alpha1.Infrastructure, infraType string, service *v1.Service, ip string) *Infrastructure {
+func toInfrastructureResource(infra *v1alpha1.Infrastructure, service *v1.Service, ip string) *Infrastructure {
 	name := infra.GetName()
 	host := ip
 
@@ -223,25 +191,55 @@ func toInfrastructureResource(infra *v1alpha1.Infrastructure, infraType string, 
 	return &Infrastructure{
 		Resource: client.Resource{
 			Id:      string(name),
-			Type:    infraType,
+			Type:    GetSchemaType().Infrastructure,
 			Actions: map[string]string{},
 		},
-		Host:      host,
-		Dashboard: infra,
-		Longhorn:  infra,
-		RancherVM: infra,
+
+		Host:  host,
+		Infra: infra,
 	}
 }
 
+//func toInfrastructureCollection(list *v1alpha1.InfrastructureList, infraType string) *client.GenericCollection {
+//	data := []interface{}{}
+//	for _, item := range list.Items {
+//		data = append(data, toInfrastructureResource(&item, infraType, nil, ""))
+//	}
+//	return &client.GenericCollection{Data: data, Collection: client.Collection{ResourceType: infraType}}
+//}
+//
+//func toInfrastructureResource(infra *v1alpha1.Infrastructure, infraType string, service *v1.Service, ip string) *Infrastructure {
+//	name := infra.GetName()
+//	host := ip
+//
+//	if service != nil {
+//		port := service.Spec.Ports[0].NodePort
+//		host = host + ":" + util.Int32ToString(port)
+//	}
+//	if name == "" {
+//		return nil
+//	}
+//	return &Infrastructure{
+//		Resource: client.Resource{
+//			Id:      string(name),
+//			Type:    infraType,
+//			Actions: map[string]string{},
+//		},
+//		Host:      host,
+//		Dashboard: infra,
+//		Longhorn:  infra,
+//		RancherVM: infra,
+//	}
+//}
+
 func toDeleteResource(resType string) *Result {
-	msg := "delete success"
 	return &Result{
 		Resource: client.Resource{
-			Id:      string("delete"),
-			Type:    resType,
-			Actions: map[string]string{},
+			Id:               string("delete success"),
+			Type: /*resType*/ GetSchemaType().Infrastructure,
+			Actions:          map[string]string{},
 		},
-		Message: msg,
+		Message: "delete success",
 	}
 }
 
@@ -257,29 +255,6 @@ func toBaseInfo(baseInfo []map[string]string) *BaseInfo {
 		},
 		BaseInfo: baseInfo,
 	}
-}
-
-func toConfigMapResource(configmap *v1.ConfigMap) *ConfigMap {
-	name := configmap.GetName()
-	if name == "" {
-		return nil
-	}
-	return &ConfigMap{
-		Resource: client.Resource{
-			Id:      string(name),
-			Type:    GetSchemaType().Configmap,
-			Actions: map[string]string{},
-		},
-		ConfigMap: configmap,
-	}
-}
-
-func toConfigMapCollection(configmapList *v1.ConfigMapList) *client.GenericCollection {
-	data := []interface{}{}
-	for _, cm := range configmapList.Items {
-		data = append(data, toConfigMapResource(&cm))
-	}
-	return &client.GenericCollection{Data: data, Collection: client.Collection{ResourceType: GetSchemaType().Configmap}}
 }
 
 func toNodeResource(node *v1.Node) *Node {

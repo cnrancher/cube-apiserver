@@ -1,16 +1,9 @@
 package backend
 
 import (
-	"github.com/cnrancher/cube-apiserver/k8s/pkg/apis/cube/v1alpha1"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-)
-
-var (
-	vmReplicas int32 = 1
 )
 
 const (
@@ -128,61 +121,4 @@ func (c *ClientGenerator) VirtualMachineCRDDeploy() error {
 		return nil
 	}
 	return err
-}
-
-func (c *ClientGenerator) RancherVMList() (*v1alpha1.InfrastructureList, error) {
-	info, err := getConfigMapInfo(c)
-	if err != nil {
-		return nil, err
-	}
-	return c.Infraclientset.CubeV1alpha1().Infrastructures(info.Data[rancherVMNamespace]).List(metav1.ListOptions{})
-}
-
-func (c *ClientGenerator) RancherVMGet() (*v1alpha1.Infrastructure, error) {
-	info, err := getConfigMapInfo(c)
-	if err != nil {
-		return nil, err
-	}
-	return c.Infraclientset.CubeV1alpha1().Infrastructures(info.Data[rancherVMNamespace]).Get(info.Data[rancherVMName], metav1.GetOptions{})
-
-}
-
-func (c *ClientGenerator) RancherVMDeploy() (*v1alpha1.Infrastructure, error) {
-	info, err := getConfigMapInfo(c)
-	if err != nil {
-		return nil, err
-	}
-
-	err = ensureNamespaceExists(c, info.Data[rancherVMNamespace])
-	if err != nil && !k8serrors.IsAlreadyExists(err) {
-		return nil, err
-	}
-
-	db, err := c.Infraclientset.CubeV1alpha1().Infrastructures(info.Data[rancherVMNamespace]).Create(&v1alpha1.Infrastructure{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      info.Data[rancherVMName],
-			Namespace: info.Data[rancherVMNamespace],
-		},
-		Spec: v1alpha1.InfraSpec{
-			DisplayName: info.Data[rancherVMName],
-			Description: info.Data[rancherVMDesc],
-			Icon:        info.Data[rancherVMIcon],
-			InfraKind:   "RancherVM",
-			Replicas:    &vmReplicas,
-			Images:      *c.CubeImages,
-		},
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return db, nil
-}
-
-func (c *ClientGenerator) RancherVMDelete() error {
-	info, err := getConfigMapInfo(c)
-	if err != nil {
-		return err
-	}
-	return c.Infraclientset.CubeV1alpha1().Infrastructures(info.Data[rancherVMNamespace]).Delete(info.Data[rancherVMName], &metav1.DeleteOptions{})
 }

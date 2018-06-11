@@ -50,8 +50,7 @@ func APIServerCmd() cli.Command {
 	}
 }
 
-func resolveClusterFile( /*ctx *cli.Context,*/ clusterFile string) (string, error) {
-	//clusterFile := ctx.String("config")
+func resolveClusterFile(clusterFile string) (string, error) {
 	fp, err := filepath.Abs(clusterFile)
 	if err != nil {
 		return "", fmt.Errorf("failed to lookup current directory name: %v", err)

@@ -36,14 +36,17 @@ const (
 	DashboardName      = "kubernetes-dashboard"
 	DashboardNamespace = "kube-system"
 	DashboardDesc      = "Kubernetes Dashboard is a general purpose, web-based UI for Kubernetes clusters. It allows users to manage applications running in the cluster and troubleshoot them, as well as manage the cluster itself."
+	DashboardKind      = "Dashboard"
 
-	LonghornName      = "longhorn-ui"
+	LonghornName      = "longhorn-frontend"
 	LonghornNamespace = "longhorn-system"
 	LanghornDesc      = "Longhorn is a distributed block storage system for Kubernetes powered by Rancher Labs."
+	LanghornKind      = "Longhorn"
 
 	RancherVMName      = "ranchervm-frontend"
 	RancherVMNamespace = "ranchervm-system"
 	RancherVMDesc      = ""
+	RancherVMKind      = "RancherVM"
 )
 
 func GetLocalPrincipalID(user *userv1alpha1.User) string {

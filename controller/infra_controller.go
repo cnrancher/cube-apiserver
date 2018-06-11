@@ -664,7 +664,6 @@ func (c *InfraController) createDashboard(infra *infrav1alpha1.Infrastructure) (
 						Containers: []corev1.Container{
 							{
 								Name: "kubernetes-dashboard",
-								//Image: "k8s.gcr.io/kubernetes-dashboard-amd64:v1.8.3",
 								Image: infra.Spec.Images.Dashboard,
 								Ports: []corev1.ContainerPort{
 									{
@@ -898,7 +897,6 @@ func (c *InfraController) createLonghorn(infra *infrav1alpha1.Infrastructure) (*
 						Containers: []corev1.Container{
 							{
 								Name: "longhorn-manager",
-								//Image:           "rancher/longhorn-manager:b7f1b01",
 								Image:           infra.Spec.Images.LonghornManager,
 								ImagePullPolicy: "Always",
 								SecurityContext: &corev1.SecurityContext{
@@ -1041,7 +1039,7 @@ func (c *InfraController) createLonghorn(infra *infrav1alpha1.Infrastructure) (*
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "longhorn-frontend",
 				Labels: map[string]string{
-					"app": "longhorn-ui",
+					"app": "longhorn-frontend",
 				},
 				Namespace: LonghornNamespace,
 				OwnerReferences: []metav1.OwnerReference{
@@ -1060,7 +1058,7 @@ func (c *InfraController) createLonghorn(infra *infrav1alpha1.Infrastructure) (*
 					},
 				},
 				Selector: map[string]string{
-					"app": "longhorn-ui",
+					"app": "longhorn-frontend",
 				},
 				Type: "NodePort",
 			},
@@ -1099,7 +1097,6 @@ func (c *InfraController) createLonghorn(infra *infrav1alpha1.Infrastructure) (*
 						Containers: []corev1.Container{
 							{
 								Name: "longhorn-flexvolume-driver-deployer",
-								//Image:           "rancher/longhorn-manager:fabeb53",
 								Image:           infra.Spec.Images.LonghornFlexvolumeDriver,
 								ImagePullPolicy: "Always",
 
@@ -1140,14 +1137,12 @@ func (c *InfraController) createLonghorn(infra *infrav1alpha1.Infrastructure) (*
 			return nil, err
 		}
 
-		//var replicas int32 = 1
-		//replicas := int32(1)
 		// create longhorn ui deployment
 		deployment, err := c.clientset.AppsV1().Deployments(LonghornNamespace).Create(&appsv1.Deployment{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: "longhorn-ui",
+				Name: "longhorn-frontend",
 				Labels: map[string]string{
-					"app": "longhorn-ui",
+					"app": "longhorn-frontend",
 				},
 				Namespace: LonghornNamespace,
 				OwnerReferences: []metav1.OwnerReference{
@@ -1162,20 +1157,19 @@ func (c *InfraController) createLonghorn(infra *infrav1alpha1.Infrastructure) (*
 				Replicas: /*&replicas*/ infra.Spec.Replicas,
 				Selector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{
-						"app": "longhorn-ui",
+						"app": "longhorn-frontend",
 					},
 				},
 				Template: corev1.PodTemplateSpec{
 					ObjectMeta: metav1.ObjectMeta{
 						Labels: map[string]string{
-							"app": "longhorn-ui",
+							"app": "longhorn-frontend",
 						},
 					},
 					Spec: corev1.PodSpec{
 						Containers: []corev1.Container{
 							{
-								Name: "longhorn-ui",
-								//Image: "rancher/longhorn-ui:6d74dfc",
+								Name: "longhorn-frontend",
 								Image: infra.Spec.Images.LonghornUi,
 								Ports: []corev1.ContainerPort{
 									{

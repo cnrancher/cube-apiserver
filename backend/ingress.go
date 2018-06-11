@@ -1,11 +1,6 @@
 package backend
 
 import (
-	//"k8s.io/api/extensions/v1beta1"
-	//metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	//k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	//"k8s.io/apimachinery/pkg/util/intstr"
-	//"github.com/cnrancher/cube-apiserver/controller"
 	"fmt"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/api/core/v1"
@@ -14,11 +9,7 @@ import (
 )
 
 var (
-	DbIngressName = "cube-rancher-ingress-db"
-	LhIngressName = "cube-rancher-ingress-lh"
-	dbHost        = "dashboard.cube.rancher.io"
-	lhHost        = "longhorn.cube.rancher.io"
-	Service       *v1.Service
+	Service *v1.Service
 )
 
 func (c *ClientGenerator) ServiceGet(ns, id string) error {

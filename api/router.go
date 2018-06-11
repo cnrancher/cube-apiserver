@@ -130,21 +130,10 @@ func NewRouter(s *Server) *mux.Router {
 	apiRouter.Methods("GET").Path("/clusters").Handler(f(schemas, s.ClusterList))
 
 	apiRouter.Methods("GET").Path("/baseinfos").Handler(f(schemas, s.BaseInfoGet))
-
-	apiRouter.Methods("GET").Path("/dashboards").Handler(f(schemas, s.DashboardList))
-	apiRouter.Methods("GET").Path("/dashboards/{id}").Handler(f(schemas, s.DashboardGet))
-	apiRouter.Methods("POST").Path("/dashboards").Handler(f(schemas, s.DashboardCreate))
-	apiRouter.Methods("DELETE").Path("/dashboards/{id}").Handler(f(schemas, s.DashboardDelete))
-
-	apiRouter.Methods("GET").Path("/longhorns").Handler(f(schemas, s.LonghornList))
-	apiRouter.Methods("GET").Path("/longhorns/{id}").Handler(f(schemas, s.LonghornGet))
-	apiRouter.Methods("POST").Path("/longhorns").Handler(f(schemas, s.LonghornCreate))
-	apiRouter.Methods("DELETE").Path("/longhorns/{id}").Handler(f(schemas, s.LonghornDelete))
-
-	apiRouter.Methods("GET").Path("/ranchervms").Handler(f(schemas, s.RancherVMList))
-	apiRouter.Methods("GET").Path("/ranchervms/{id}").Handler(f(schemas, s.RancherVMGet))
-	apiRouter.Methods("POST").Path("/ranchervms").Handler(f(schemas, s.RancherVMCreate))
-	apiRouter.Methods("DELETE").Path("/ranchervms/{id}").Handler(f(schemas, s.RancherVMDelete))
+	apiRouter.Methods("GET").Path("/infrastructures").Handler(f(schemas, s.InfrastructureList))
+	apiRouter.Methods("POST").Path("/infrastructures").Handler(f(schemas, s.InfrastructureCreate))
+	apiRouter.Methods("GET").Path("/infrastructures/{kind}").Handler(f(schemas, s.InfrastructureGet))
+	apiRouter.Methods("DELETE").Path("/infrastructures/{kind}").Handler(f(schemas, s.InfrastructureDelete))
 
 	inSecureRouter.Methods("POST").Path("/login").HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		s.Login(w, req)
