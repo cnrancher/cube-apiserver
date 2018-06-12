@@ -1,0 +1,12 @@
+---
+#kubernetes config
+kube_config: /home/ubuntu/kubeconfig
+
+#Infrastructure images
+infra_images:
+  dashboard: k8s.gcr.io/kubernetes-dashboard-amd64:v1.8.3
+  longhorn_manager: rancher/longhorn-manager:b7f1b01
+  longhorn_flexvolume-driver: rancher/longhorn-manager:fabeb53
+  longhorn_ui: rancher/longhorn-ui:6d74dfc
+  ranchervm: rancher/vm
+  ranchervm_frontend: rancher/vm-frontend

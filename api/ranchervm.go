@@ -7,7 +7,6 @@ import (
 	"github.com/rancher/go-rancher/api"
 	"github.com/cnrancher/cube-apiserver/controller"
 	"github.com/cnrancher/cube-apiserver/backend"
-	"github.com/Sirupsen/logrus"
 )
 
 func (s *Server) RancherVMList(rw http.ResponseWriter, req *http.Request) error {
@@ -38,8 +37,6 @@ func (s *Server) RancherVMGet(rw http.ResponseWriter, req *http.Request) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to get node ip")
 	}
-
-	logrus.Infof("======RancherVMGet=====ip============%s", ip)
 	apiContext.Write(toInfrastructureResource(vm, GetSchemaType().RancherVM, backend.Service, ip))
 	return nil
 }
@@ -61,8 +58,6 @@ func (s *Server) RancherVMCreate(rw http.ResponseWriter, req *http.Request) erro
 	if err != nil {
 		return errors.Wrap(err, "failed to get node ip")
 	}
-
-	logrus.Infof("======RancherVMCreate=====ip============%s", ip)
 	apiContext.Write(toInfrastructureResource(vm, GetSchemaType().RancherVM, backend.Service, ip))
 	return nil
 }

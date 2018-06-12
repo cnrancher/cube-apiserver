@@ -7,12 +7,18 @@ import (
 	"github.com/rancher/go-rancher/client"
 	"k8s.io/api/core/v1"
 	"github.com/cnrancher/cube-apiserver/util"
-	"github.com/Sirupsen/logrus"
 )
 
 var KubeConfigLocation string
 
 var sType *schemaType
+
+type CubeConfig struct {
+	// Cluster Name used in the kube config
+	KubeConfig string `yaml:"kube_config" json:"kubeConfig,omitempty"`
+	// List of images used internally for proxy, cert downlaod and kubedns
+	InfraImages v1alpha1.InfraImages `yaml:"infra_images" json:"infraImages,omitempty"`
+}
 
 type schemaType struct {
 	Configmap string
@@ -106,7 +112,6 @@ func NewSchema() *client.Schemas {
 
 	nodeSchema(schemas.AddType("node", Node{}))
 	clusterSchema(schemas.AddType("cluster", Cluster{}))
-	//configMapSchema(schemas.AddType(GetSchemaType().Configmap, ConfigMap{}))
 	dashboardSchema(schemas.AddType(GetSchemaType().Dashboard, Infrastructure{}))
 	longhornSchema(schemas.AddType(GetSchemaType().Longhorn, Infrastructure{}))
 	rancherVMSchema(schemas.AddType(GetSchemaType().RancherVM, Infrastructure{}))
@@ -133,16 +138,6 @@ func nodeSchema(node *client.Schema) {
 	node.ResourceMethods = []string{"GET"}
 
 	node.ResourceFields["node"] = client.Field{
-		Type:     "struct",
-		Nullable: true,
-	}
-}
-
-func configMapSchema(cm *client.Schema) {
-	cm.CollectionMethods = []string{"GET"}
-	cm.ResourceMethods = []string{"GET"}
-
-	cm.ResourceFields[GetSchemaType().Configmap] = client.Field{
 		Type:     "struct",
 		Nullable: true,
 	}
@@ -204,12 +199,9 @@ func toInfrastructureResource(infra *v1alpha1.Infrastructure, infraType string, 
 	host := ip
 
 	if service != nil {
-		logrus.Infof("===========aaaaaa============%s", "toInfrastructureResource")
 		port := service.Spec.Ports[0].NodePort
 		host = host + ":" + util.Int32ToString(port)
-		logrus.Infof("===========host============%s", host)
 	}
-	logrus.Infof("===========bbbb============%s", "toInfrastructureResource")
 	if name == "" {
 		return nil
 	}

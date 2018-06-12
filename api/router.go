@@ -90,7 +90,7 @@ func TokenObtainMiddleware(w http.ResponseWriter, r *http.Request, next http.Han
 	tokenAuthValue := util.GetTokenAuthFromRequest(r)
 
 	// ignore empty kubeConfig location, this is singleton instance
-	clientGenerator := backend.NewClientGenerator("")
+	clientGenerator := backend.NewClientGenerator("", nil)
 
 	// If there was an error, do not call next.
 	if tokenAuthValue != "" && next != nil {
@@ -130,7 +130,6 @@ func NewRouter(s *Server) *mux.Router {
 	apiRouter.Methods("GET").Path("/clusters").Handler(f(schemas, s.ClusterList))
 
 	apiRouter.Methods("GET").Path("/baseinfos").Handler(f(schemas, s.BaseInfoGet))
-	//apiRouter.Methods("GET").Path("/configmaps").Handler(f(schemas, s.ConfigmapGet))
 
 	apiRouter.Methods("GET").Path("/dashboards").Handler(f(schemas, s.DashboardList))
 	apiRouter.Methods("GET").Path("/dashboards/{id}").Handler(f(schemas, s.DashboardGet))

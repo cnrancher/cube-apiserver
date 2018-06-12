@@ -169,6 +169,7 @@ func (c *ClientGenerator) RancherVMDeploy() (*v1alpha1.Infrastructure, error) {
 			Icon:        info.Data[rancherVMIcon],
 			InfraKind:   "RancherVM",
 			Replicas:    &vmReplicas,
+			Images:      *c.CubeImages,
 		},
 	})
 	if err != nil {

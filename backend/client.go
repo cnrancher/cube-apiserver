@@ -14,6 +14,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	listerscorev1 "k8s.io/client-go/listers/core/v1"
 	"k8s.io/client-go/tools/cache"
+	"github.com/cnrancher/cube-apiserver/k8s/pkg/apis/cube/v1alpha1"
 )
 
 var (
@@ -21,6 +22,7 @@ var (
 )
 
 type ClientGenerator struct {
+	CubeImages          *v1alpha1.InfraImages
 	Clientset           kubernetes.Clientset
 	Apiclientset        apics.Clientset
 	Infraclientset      infracs.Clientset
@@ -30,7 +32,7 @@ type ClientGenerator struct {
 	serviceSynced       cache.InformerSynced
 }
 
-func NewClientGenerator(kubeConfig string) *ClientGenerator {
+func NewClientGenerator(kubeConfig string, images *v1alpha1.InfraImages) *ClientGenerator {
 	if clientGenerator == nil {
 		var config *rest.Config
 		var err error
@@ -67,6 +69,7 @@ func NewClientGenerator(kubeConfig string) *ClientGenerator {
 		serviceInformer := informerFactory.Core().V1().Services()
 
 		clientGenerator = &ClientGenerator{
+			CubeImages:          images,
 			Clientset:           *clientset,
 			Apiclientset:        *apiclientset,
 			Infraclientset:      *infraclientset,

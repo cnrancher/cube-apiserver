@@ -190,6 +190,7 @@ func (c *ClientGenerator) LonghornDeploy() (*v1alpha1.Infrastructure, error) {
 			Icon:        info.Data[langhornIcon],
 			InfraKind:   "Longhorn",
 			Replicas:    &lhReplicas,
+			Images:      *c.CubeImages,
 		},
 	})
 	if err != nil {

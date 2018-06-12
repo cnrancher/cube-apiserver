@@ -69,7 +69,7 @@ func (s *Server) Logout(w http.ResponseWriter, req *http.Request) error {
 	http.SetCookie(w, tokenCookie)
 
 	// ignore empty kubeConfig location, this is singleton instance
-	clientGenerator := backend.NewClientGenerator("")
+	clientGenerator := backend.NewClientGenerator("", nil)
 
 	storedToken, statusCode, err := clientGenerator.GetStoredToken(tokenAuthValue)
 	if err != nil {

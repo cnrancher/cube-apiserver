@@ -381,7 +381,6 @@ func (c *InfraController) bundleCreate(infra *infrav1alpha1.Infrastructure) (*ap
 	case "Longhorn":
 		return c.createLonghorn(infra)
 	case "RancherVM":
-		logrus.Infof("=====zzzz=====infra===%s", infra.Name)
 		return c.createRancherVM(infra)
 	}
 	return nil, errors.New("error bundle create: infrastructure type " + infra.Spec.InfraKind + " is invalid")
@@ -396,7 +395,6 @@ func (c *InfraController) bundleUpdate(infra *infrav1alpha1.Infrastructure) (*ap
 	case "Longhorn":
 		return c.updateLonghorn(infra)
 	case "RancherVM":
-		logrus.Infof("=====yyyy=====infra===%s", infra.Name)
 		return c.updateRancherVM(infra)
 	}
 	return nil, errors.New("error bundle update: infrastructure type " + infra.Spec.InfraKind + " is invalid")
@@ -424,7 +422,6 @@ func (c *InfraController) detectService(infra *infrav1alpha1.Infrastructure) (bo
 	_, err := c.serviceLister.Services(namespace).Get(serviceName)
 
 	if err != nil {
-		logrus.Infof("=====jjjjjjjj=====infra===%s", infra.Name)
 		return false, err
 	}
 
@@ -570,51 +567,34 @@ func (c *InfraController) createDashboard(infra *infrav1alpha1.Infrastructure) (
 			return nil, err
 		}
 
-		//kubectl create clusterrolebinding add-on-cluster-admin \
-		//--clusterrole=cluster-admin \
-		//--serviceaccount=kube-system:default
-
-		//RoleRef: rbacv1.RoleRef{
-		//	APIGroup: "rbac.authorization.k8s.io",
-		//	Kind:     "ClusterRole",
-		//	Name:     "longhorn-role",
-		//},
-		//	Subjects: []rbacv1.Subject{
-		//		{
-		//			Kind:      "ServiceAccount",
-		//			Name:      "longhorn-service-account",
-		//			Namespace: LonghornNamespace,
-		//		},
-		//	},
-
-		// create dashboard clusterRoleBinding
-		//_, err = c.clientset.RbacV1().ClusterRoleBindings().Create(&rbacv1.ClusterRoleBinding{
-		//	ObjectMeta: metav1.ObjectMeta{
-		//		Name: "kubernetes-dashboard-admin",
-		//		OwnerReferences: []metav1.OwnerReference{
-		//			*metav1.NewControllerRef(infra, schema.GroupVersionKind{
-		//				Group:   infrav1alpha1.SchemeGroupVersion.Group,
-		//				Version: infrav1alpha1.SchemeGroupVersion.Version,
-		//				Kind:    "Infrastructure",
-		//			}),
-		//		},
-		//	},
-		//	RoleRef: rbacv1.RoleRef{
-		//		APIGroup: "rbac.authorization.k8s.io",
-		//		Kind:     "ClusterRole",
-		//		Name:     "cluster-admin",
-		//	},
-		//	Subjects: []rbacv1.Subject{
-		//		{
-		//			Kind:      "ServiceAccount",
-		//			Name:      "default",
-		//			Namespace: InfrastructureNamespace,
-		//		},
-		//	},
-		//})
-		//if err != nil && !k8serrors.IsAlreadyExists(err) {
-		//	return nil, err
-		//}
+		// create dashboard roleBinding
+		_, err = c.clientset.RbacV1().ClusterRoleBindings().Create(&rbacv1.ClusterRoleBinding{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "dashboard-admin",
+				OwnerReferences: []metav1.OwnerReference{
+					*metav1.NewControllerRef(infra, schema.GroupVersionKind{
+						Group:   infrav1alpha1.SchemeGroupVersion.Group,
+						Version: infrav1alpha1.SchemeGroupVersion.Version,
+						Kind:    "Infrastructure",
+					}),
+				},
+			},
+			RoleRef: rbacv1.RoleRef{
+				APIGroup: "rbac.authorization.k8s.io",
+				Kind:     "ClusterRole",
+				Name:     "cluster-admin",
+			},
+			Subjects: []rbacv1.Subject{
+				{
+					Kind:      "ServiceAccount",
+					Name:      "kubernetes-dashboard",
+					Namespace: InfrastructureNamespace,
+				},
+			},
+		})
+		if err != nil && !k8serrors.IsAlreadyExists(err) {
+			return nil, err
+		}
 
 		// create dashboard service
 		_, err = c.clientset.CoreV1().Services(InfrastructureNamespace).Create(&corev1.Service{
@@ -683,8 +663,9 @@ func (c *InfraController) createDashboard(infra *infrav1alpha1.Infrastructure) (
 					Spec: corev1.PodSpec{
 						Containers: []corev1.Container{
 							{
-								Name:  "kubernetes-dashboard",
-								Image: "k8s.gcr.io/kubernetes-dashboard-amd64:v1.8.3",
+								Name: "kubernetes-dashboard",
+								//Image: "k8s.gcr.io/kubernetes-dashboard-amd64:v1.8.3",
+								Image: infra.Spec.Images.Dashboard,
 								Ports: []corev1.ContainerPort{
 									{
 										ContainerPort: 9090,
@@ -916,8 +897,9 @@ func (c *InfraController) createLonghorn(infra *infrav1alpha1.Infrastructure) (*
 					Spec: corev1.PodSpec{
 						Containers: []corev1.Container{
 							{
-								Name:            "longhorn-manager",
-								Image:           "rancher/longhorn-manager:b7f1b01",
+								Name: "longhorn-manager",
+								//Image:           "rancher/longhorn-manager:b7f1b01",
+								Image:           infra.Spec.Images.LonghornManager,
 								ImagePullPolicy: "Always",
 								SecurityContext: &corev1.SecurityContext{
 									Privileged: &privileged,
@@ -1116,8 +1098,9 @@ func (c *InfraController) createLonghorn(infra *infrav1alpha1.Infrastructure) (*
 					Spec: corev1.PodSpec{
 						Containers: []corev1.Container{
 							{
-								Name:            "longhorn-flexvolume-driver-deployer",
-								Image:           "rancher/longhorn-manager:fabeb53",
+								Name: "longhorn-flexvolume-driver-deployer",
+								//Image:           "rancher/longhorn-manager:fabeb53",
+								Image:           infra.Spec.Images.LonghornFlexvolumeDriver,
 								ImagePullPolicy: "Always",
 
 								Command: []string{
@@ -1191,8 +1174,9 @@ func (c *InfraController) createLonghorn(infra *infrav1alpha1.Infrastructure) (*
 					Spec: corev1.PodSpec{
 						Containers: []corev1.Container{
 							{
-								Name:  "longhorn-ui",
-								Image: "rancher/longhorn-ui:6d74dfc",
+								Name: "longhorn-ui",
+								//Image: "rancher/longhorn-ui:6d74dfc",
+								Image: infra.Spec.Images.LonghornUi,
 								Ports: []corev1.ContainerPort{
 									{
 										ContainerPort: 8000,
@@ -1343,8 +1327,9 @@ func (c *InfraController) createRancherVM(infra *infrav1alpha1.Infrastructure) (
 						HostNetwork: true,
 						Containers: []corev1.Container{
 							{
-								Name:            "ip-controller",
-								Image:           "rancher/vm",
+								Name: "ip-controller",
+								//Image:           "rancher/vm",
+								Image:           infra.Spec.Images.RancherVM,
 								ImagePullPolicy: "Always",
 								Command: []string{
 									"sh",
@@ -1363,8 +1348,9 @@ func (c *InfraController) createRancherVM(infra *infrav1alpha1.Infrastructure) (
 								},
 							},
 							{
-								Name:            "arp-scanner",
-								Image:           "rancher/vm",
+								Name: "arp-scanner",
+								//Image:           "rancher/vm",
+								Image:           infra.Spec.Images.RancherVM,
 								ImagePullPolicy: "Always",
 								Command: []string{
 									"bash",
@@ -1496,8 +1482,9 @@ func (c *InfraController) createRancherVM(infra *infrav1alpha1.Infrastructure) (
 						},
 						Containers: []corev1.Container{
 							{
-								Name:            "ranchervm-controller",
-								Image:           "rancher/vm",
+								Name: "ranchervm-controller",
+								//Image:           "rancher/vm",
+								Image:           infra.Spec.Images.RancherVM,
 								ImagePullPolicy: "Always",
 								Args: []string{
 									"--vm",
@@ -1564,8 +1551,9 @@ func (c *InfraController) createRancherVM(infra *infrav1alpha1.Infrastructure) (
 						},
 						Containers: []corev1.Container{
 							{
-								Name:            "ranchervm-backend",
-								Image:           "rancher/vm",
+								Name: "ranchervm-backend",
+								//Image:           "rancher/vm",
+								Image:           infra.Spec.Images.RancherVM,
 								ImagePullPolicy: "Always",
 								Args: []string{
 									"--backend",
@@ -1630,8 +1618,9 @@ func (c *InfraController) createRancherVM(infra *infrav1alpha1.Infrastructure) (
 						},
 						Containers: []corev1.Container{
 							{
-								Name:            "ranchervm-frontend",
-								Image:           "rancher/vm-frontend",
+								Name: "ranchervm-frontend",
+								//Image:           "rancher/vm-frontend",
+								Image:           infra.Spec.Images.RancherVMFrontend,
 								ImagePullPolicy: "Always",
 								Env: []corev1.EnvVar{
 									{

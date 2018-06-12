@@ -39,12 +39,6 @@ func (c *ClientGenerator) DashBoardDeploy() (*v1alpha1.Infrastructure, error) {
 		return nil, err
 	}
 
-	// generate & deploy ingress resources for visit
-	//err = c.DashboardIngressDeploy()
-	//if err != nil {
-	//	return nil, err
-	//}
-
 	db, err := c.Infraclientset.CubeV1alpha1().Infrastructures(info.Data[dashboardNamespace]).Create(&v1alpha1.Infrastructure{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      info.Data[dashboardName],
@@ -56,6 +50,7 @@ func (c *ClientGenerator) DashBoardDeploy() (*v1alpha1.Infrastructure, error) {
 			Icon:        info.Data[dashboardIcon],
 			InfraKind:   "Dashboard",
 			Replicas:    &dbReplicas,
+			Images:      *c.CubeImages,
 		},
 	})
 	if err != nil {
