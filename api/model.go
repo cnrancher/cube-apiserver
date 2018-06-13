@@ -72,6 +72,9 @@ type Infrastructure struct {
 	Longhorn  *v1alpha1.Infrastructure `json:"longhorn"`
 	RancherVM *v1alpha1.Infrastructure `json:"ranchervm"`
 	Host      string                   `json:"host"`
+
+	//Name string `json:"name"`
+	//Size string `json:"size"`
 }
 
 type Cluster struct {
@@ -175,14 +178,26 @@ func longhornSchema(longhorn *client.Schema) {
 
 }
 
-func rancherVMSchema(longhorn *client.Schema) {
-	longhorn.CollectionMethods = []string{"GET", "POST"}
-	longhorn.ResourceMethods = []string{"GET", "DELETE"}
+func rancherVMSchema(ranchervm *client.Schema) {
+	ranchervm.CollectionMethods = []string{"GET", "POST"}
+	ranchervm.ResourceMethods = []string{"GET", "DELETE"}
 
-	longhorn.ResourceFields[GetSchemaType().RancherVM] = client.Field{
+	ranchervm.ResourceFields[GetSchemaType().RancherVM] = client.Field{
 		Type:     "struct",
 		Nullable: true,
 	}
+
+	//volumeName := volume.ResourceFields["name"]
+	//volumeName.Create = true
+	//volumeName.Required = true
+	//volumeName.Unique = true
+	//volume.ResourceFields["name"] = volumeName
+	//
+	//volumeSize := volume.ResourceFields["size"]
+	//volumeSize.Create = true
+	//volumeSize.Required = true
+	//volumeSize.Default = "100G"
+	//volume.ResourceFields["size"] = volumeSize
 
 }
 

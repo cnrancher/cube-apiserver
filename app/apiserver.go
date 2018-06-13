@@ -16,15 +16,15 @@ import (
 	"os"
 	"io/ioutil"
 	"gopkg.in/yaml.v2"
+	"reflect"
 )
 
 const (
 	ListenAddress  = "listen-addr"
 	ConfigLocation = "kube-config"
 	Config         = "config"
+	ConfigFile     = "config.yml"
 )
-
-var clusterFilePath string
 
 func APIServerCmd() cli.Command {
 	return cli.Command{
@@ -34,14 +34,10 @@ func APIServerCmd() cli.Command {
 				Name:  ListenAddress,
 				Usage: "Specify apiServer listen address",
 			},
-			//cli.StringFlag{
-			//	Name:  ConfigLocation,
-			//	Usage: "Specify apiServer kubernetes config location",
-			//},
 			cli.StringFlag{
 				Name:  Config,
 				Usage: "Specify an alternate cluster YAML file",
-				Value: "config.yml",
+				Value: ConfigFile,
 			},
 		},
 		Action: func(c *cli.Context) error {
@@ -54,23 +50,23 @@ func APIServerCmd() cli.Command {
 	}
 }
 
-func resolveClusterFile(ctx *cli.Context) (string, string, error) {
-	clusterFile := ctx.String("config")
+func resolveClusterFile( /*ctx *cli.Context,*/ clusterFile string) (string, error) {
+	//clusterFile := ctx.String("config")
 	fp, err := filepath.Abs(clusterFile)
 	if err != nil {
-		return "", "", fmt.Errorf("failed to lookup current directory name: %v", err)
+		return "", fmt.Errorf("failed to lookup current directory name: %v", err)
 	}
 	file, err := os.Open(fp)
 	if err != nil {
-		return "", "", fmt.Errorf("Can not find cluster configuration file: %v", err)
+		return "", fmt.Errorf("Can not find cluster configuration file: %v", err)
 	}
 	defer file.Close()
 	buf, err := ioutil.ReadAll(file)
 	if err != nil {
-		return "", "", fmt.Errorf("failed to read file: %v", err)
+		return "", fmt.Errorf("failed to read file: %v", err)
 	}
 	clusterFileBuff := string(buf)
-	return clusterFileBuff, clusterFile, nil
+	return clusterFileBuff, nil
 }
 
 func ParseConfig(clusterFile string) (*api.CubeConfig, error) {
@@ -83,31 +79,40 @@ func ParseConfig(clusterFile string) (*api.CubeConfig, error) {
 }
 
 func startAPIServer(c *cli.Context) error {
-
-	clusterFile, filePath, err := resolveClusterFile(c)
+	filePath := c.String(Config)
+	clusterFile, err := resolveClusterFile(ConfigFile)
 	if err != nil {
-		return fmt.Errorf("Failed to resolve cluster file: %v", err)
+		return fmt.Errorf("Failed to resolve default cluster file: %v", err)
 	}
-	clusterFilePath = filePath
-
-	rkeConfig, err := ParseConfig(clusterFile)
+	config, err := ParseConfig(clusterFile)
 	if err != nil {
-		return fmt.Errorf("Failed to parse cluster file: %v", err)
+		return fmt.Errorf("Failed to parse default cluster file: %v", err)
 	}
-	if rkeConfig == nil {
-		return fmt.Errorf("RancherCUBE: require %v", Config)
+
+	if filePath != ConfigFile {
+		cusClusterFile, err := resolveClusterFile(filePath)
+		if err != nil {
+			return fmt.Errorf("Failed to resolve cluster file: %v", err)
+		}
+		cusConfig, err := ParseConfig(cusClusterFile)
+		if err != nil {
+			return fmt.Errorf("Failed to parse cluster file: %v", err)
+		}
+
+		if cusConfig != nil {
+			config = buildConfig(config, cusConfig)
+		}
 	}
 
 	apiServerListenAddr := c.String(ListenAddress)
-	apiServerKubeConfigLocation := /*c.String(ConfigLocation)*/ rkeConfig.KubeConfig
 	if "" == apiServerListenAddr {
 		return fmt.Errorf("RancherCUBE: require %v", ListenAddress)
 	}
-	if "" == apiServerKubeConfigLocation {
+	if "" == config.KubeConfig {
 		return fmt.Errorf("RancherCUBE: require %v", ConfigLocation)
 	}
 
-	clientGenerator := backend.NewClientGenerator(rkeConfig.KubeConfig, &rkeConfig.InfraImages)
+	clientGenerator := backend.NewClientGenerator(config.KubeConfig, &config.InfraImages)
 
 	// generate & deploy customer resources
 	clientGenerator.UserCRDDeploy()
@@ -119,7 +124,7 @@ func startAPIServer(c *cli.Context) error {
 	clientGenerator.CredentialCRDDeploy()
 	clientGenerator.ArptableCRDDeploy()
 	clientGenerator.VirtualMachineCRDDeploy()
-	// generate & deploy config map resources for base info
+	// generate & deploy cusConfig map resources for base info
 	clientGenerator.ConfigMapDeploy()
 
 	done := make(chan struct{})
@@ -145,7 +150,7 @@ func startAPIServer(c *cli.Context) error {
 		}
 	}()
 
-	server := api.NewServer(clientGenerator, apiServerKubeConfigLocation)
+	server := api.NewServer(clientGenerator, config.KubeConfig)
 	router := http.Handler(api.NewRouter(server))
 
 	logrus.Infof("RancherCUBE: listening on %s", apiServerListenAddr)
@@ -158,4 +163,19 @@ func startAPIServer(c *cli.Context) error {
 	<-done
 
 	return nil
+}
+
+func buildConfig(config *api.CubeConfig, cusConfig *api.CubeConfig) *api.CubeConfig {
+	if cusConfig.KubeConfig != "" {
+		config.KubeConfig = cusConfig.KubeConfig
+	}
+
+	valueGet := reflect.ValueOf(cusConfig.InfraImages)
+	valueSet := reflect.ValueOf(&config.InfraImages).Elem()
+	for k := 0; k < valueGet.NumField(); k++ {
+		if "" != valueGet.Field(k).String() {
+			valueSet.Field(k).SetString(valueGet.Field(k).String())
+		}
+	}
+	return config
 }
