@@ -147,7 +147,9 @@ func NewRouter(s *Server) *mux.Router {
 		negroni.NewRecovery(),
 		negroni.NewLogger(),
 	)
-
+	//---------
+	commonMiddleware.Use(negroni.NewStatic(http.Dir("/home/ubuntu/dist")))
+	//---------
 	jwtMiddleware := generatePrivateKey()
 
 	router.PathPrefix("/v1").Handler(commonMiddleware.With(
@@ -159,6 +161,5 @@ func NewRouter(s *Server) *mux.Router {
 	router.PathPrefix("/").Handler(commonMiddleware.With(
 		negroni.Wrap(inSecureRouter),
 	))
-
 	return router
 }

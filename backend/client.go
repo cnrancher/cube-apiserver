@@ -15,6 +15,7 @@ import (
 	listerscorev1 "k8s.io/client-go/listers/core/v1"
 	"k8s.io/client-go/tools/cache"
 	"github.com/cnrancher/cube-apiserver/k8s/pkg/apis/cube/v1alpha1"
+	infomerv1alpha1 "github.com/cnrancher/cube-apiserver/k8s/pkg/client/informers/externalversions/cube/v1alpha1"
 )
 
 var (
@@ -30,6 +31,7 @@ type ClientGenerator struct {
 	CubeInformerFactory cubeinformers.SharedInformerFactory
 	serviceLister       listerscorev1.ServiceLister
 	serviceSynced       cache.InformerSynced
+	InfraInformer       infomerv1alpha1.InfrastructureInformer
 }
 
 func NewClientGenerator(kubeConfig string, images *v1alpha1.InfraImages) *ClientGenerator {
@@ -67,6 +69,7 @@ func NewClientGenerator(kubeConfig string, images *v1alpha1.InfraImages) *Client
 		informerFactory := informers.NewSharedInformerFactory(clientset, time.Second*30)
 		infraInformerFactory := cubeinformers.NewSharedInformerFactory(infraclientset, time.Second*30)
 		serviceInformer := informerFactory.Core().V1().Services()
+		infraInformer := infraInformerFactory.Cube().V1alpha1().Infrastructures()
 
 		clientGenerator = &ClientGenerator{
 			CubeImages:          images,
@@ -77,6 +80,7 @@ func NewClientGenerator(kubeConfig string, images *v1alpha1.InfraImages) *Client
 			CubeInformerFactory: infraInformerFactory,
 			serviceLister:       serviceInformer.Lister(),
 			serviceSynced:       serviceInformer.Informer().HasSynced,
+			InfraInformer:       infraInformer,
 		}
 	}
 

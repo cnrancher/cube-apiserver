@@ -146,42 +146,47 @@ func (c *ClientGenerator) InfrastructureList() (*v1alpha1.InfrastructureList, er
 }
 
 func (c *ClientGenerator) InfrastructureGet(kind string, isBaseInfo bool) (*v1alpha1.Infrastructure, error) {
-	infra := c.getInfra(kind)
+	infraInfo := c.getInfra(kind)
 	info, err := getConfigMapInfo(c)
+	if err != nil {
+		return nil, err
+	}
+
+	infra, err := c.Infraclientset.CubeV1alpha1().Infrastructures(info.Data[infraInfo.namespace]).Get(info.Data[infraInfo.name], metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
 
 	if !isBaseInfo {
-		err = c.ServiceGet(info.Data[infra.namespace], info.Data[infra.name])
+		err = c.ServiceGet(info.Data[infraInfo.namespace], info.Data[infraInfo.name])
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to get infrastructure service:%s", info.Data[infra.name])
+			return nil, errors.Wrapf(err, "failed to get infrastructure service:%s", info.Data[infraInfo.name])
 		}
 	}
 
-	return c.Infraclientset.CubeV1alpha1().Infrastructures(info.Data[infra.namespace]).Get(info.Data[infra.name], metav1.GetOptions{})
+	return infra, nil
 }
 
 func (c *ClientGenerator) InfrastructureDeploy(kind string) (*v1alpha1.Infrastructure, error) {
-	infra := c.getInfra(kind)
+	infraInfo := c.getInfra(kind)
 	info, err := getConfigMapInfo(c)
 	if err != nil {
 		return nil, err
 	}
-	err = ensureNamespaceExists(c, info.Data[infra.namespace])
+	err = ensureNamespaceExists(c, info.Data[infraInfo.namespace])
 	if err != nil && !k8serrors.IsAlreadyExists(err) {
 		return nil, err
 	}
-	db, err := c.Infraclientset.CubeV1alpha1().Infrastructures(info.Data[infra.namespace]).Create(&v1alpha1.Infrastructure{
+	db, err := c.Infraclientset.CubeV1alpha1().Infrastructures(info.Data[infraInfo.namespace]).Create(&v1alpha1.Infrastructure{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      info.Data[infra.name],
-			Namespace: info.Data[infra.namespace],
+			Name:      info.Data[infraInfo.name],
+			Namespace: info.Data[infraInfo.namespace],
 		},
 		Spec: v1alpha1.InfraSpec{
-			DisplayName: info.Data[infra.name],
-			Description: info.Data[infra.desc],
-			Icon:        info.Data[infra.icon],
-			InfraKind:   info.Data[infra.kind],
+			DisplayName: info.Data[infraInfo.name],
+			Description: info.Data[infraInfo.desc],
+			Icon:        info.Data[infraInfo.icon],
+			InfraKind:   info.Data[infraInfo.kind],
 			Replicas:    &replicas,
 			Images:      *c.CubeImages,
 		},
@@ -190,19 +195,19 @@ func (c *ClientGenerator) InfrastructureDeploy(kind string) (*v1alpha1.Infrastru
 		return nil, err
 	}
 
-	err = c.ServiceGet(info.Data[infra.namespace], info.Data[infra.name])
+	err = c.ServiceGet(info.Data[infraInfo.namespace], info.Data[infraInfo.name])
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to get infrastructure service:%s", info.Data[infra.name])
+		return nil, errors.Wrapf(err, "failed to get infrastructure service:%s", info.Data[infraInfo.name])
 	}
 
 	return db, nil
 }
 
 func (c *ClientGenerator) InfrastructureDelete(kind string) error {
-	infra := c.getInfra(kind)
+	infraInfo := c.getInfra(kind)
 	info, err := getConfigMapInfo(c)
 	if err != nil {
 		return err
 	}
-	return c.Infraclientset.CubeV1alpha1().Infrastructures(info.Data[infra.namespace]).Delete(info.Data[infra.name], &metav1.DeleteOptions{})
+	return c.Infraclientset.CubeV1alpha1().Infrastructures(info.Data[infraInfo.namespace]).Delete(info.Data[infraInfo.name], &metav1.DeleteOptions{})
 }

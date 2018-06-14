@@ -663,7 +663,7 @@ func (c *InfraController) createDashboard(infra *infrav1alpha1.Infrastructure) (
 					Spec: corev1.PodSpec{
 						Containers: []corev1.Container{
 							{
-								Name: "kubernetes-dashboard",
+								Name:  "kubernetes-dashboard",
 								Image: infra.Spec.Images.Dashboard,
 								Ports: []corev1.ContainerPort{
 									{
@@ -896,7 +896,7 @@ func (c *InfraController) createLonghorn(infra *infrav1alpha1.Infrastructure) (*
 					Spec: corev1.PodSpec{
 						Containers: []corev1.Container{
 							{
-								Name: "longhorn-manager",
+								Name:            "longhorn-manager",
 								Image:           infra.Spec.Images.LonghornManager,
 								ImagePullPolicy: "Always",
 								SecurityContext: &corev1.SecurityContext{
@@ -1096,7 +1096,7 @@ func (c *InfraController) createLonghorn(infra *infrav1alpha1.Infrastructure) (*
 					Spec: corev1.PodSpec{
 						Containers: []corev1.Container{
 							{
-								Name: "longhorn-flexvolume-driver-deployer",
+								Name:            "longhorn-flexvolume-driver-deployer",
 								Image:           infra.Spec.Images.LonghornFlexvolumeDriver,
 								ImagePullPolicy: "Always",
 
@@ -1169,7 +1169,7 @@ func (c *InfraController) createLonghorn(infra *infrav1alpha1.Infrastructure) (*
 					Spec: corev1.PodSpec{
 						Containers: []corev1.Container{
 							{
-								Name: "longhorn-frontend",
+								Name:  "longhorn-frontend",
 								Image: infra.Spec.Images.LonghornUi,
 								Ports: []corev1.ContainerPort{
 									{

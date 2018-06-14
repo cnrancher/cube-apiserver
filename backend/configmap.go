@@ -79,13 +79,13 @@ func (c *ClientGenerator) ConfigMapDeploy() (*v1.ConfigMap, error) {
 
 			Infrastructures.longhorn.name:      controller.LonghornName,
 			Infrastructures.longhorn.namespace: controller.LonghornNamespace,
-			Infrastructures.longhorn.icon:      "",
+			Infrastructures.longhorn.icon:      "http://www.longhorninc.com/wp-content/themes/Longhorn/images/logo.png",
 			Infrastructures.longhorn.desc:      controller.LanghornDesc,
 			Infrastructures.longhorn.kind:      controller.LanghornKind,
 
 			Infrastructures.rancherVM.name:      controller.RancherVMName,
 			Infrastructures.rancherVM.namespace: controller.RancherVMNamespace,
-			Infrastructures.rancherVM.icon:      "",
+			Infrastructures.rancherVM.icon:      "https://avatars3.githubusercontent.com/u/9343010?s=200&v=4",
 			Infrastructures.rancherVM.desc:      controller.RancherVMDesc,
 			Infrastructures.rancherVM.kind:      controller.RancherVMKind,
 		},

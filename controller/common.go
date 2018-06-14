@@ -45,7 +45,7 @@ const (
 
 	RancherVMName      = "ranchervm-frontend"
 	RancherVMNamespace = "ranchervm-system"
-	RancherVMDesc      = ""
+	RancherVMDesc      = "Package and run KVM images as Kubernetes pods, run at scale."
 	RancherVMKind      = "RancherVM"
 )
 

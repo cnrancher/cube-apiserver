@@ -70,9 +70,9 @@ type BaseInfo struct {
 type Infrastructure struct {
 	client.Resource
 
-	Host  string                   `json:"host"`
-	Kind  string                   `json:"kind"`
-	Infra *v1alpha1.Infrastructure `json:"infrastructure"`
+	Host  string                  `json:"host"`
+	Kind  string                  `json:"kind"`
+	Infra v1alpha1.Infrastructure `json:"infrastructure"`
 }
 
 type Cluster struct {
@@ -196,7 +196,7 @@ func toInfrastructureResource(infra *v1alpha1.Infrastructure, service *v1.Servic
 		},
 
 		Host:  host,
-		Infra: infra,
+		Infra: *infra,
 	}
 }
 

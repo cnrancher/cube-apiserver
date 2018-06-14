@@ -1,6 +1,6 @@
 ---
 #kubernetes config
-kube_config: /home/ubuntu/kubeconfig
+kube_config: /home/ubuntu/kube_config
 
 #Infrastructure images
 infra_images:
