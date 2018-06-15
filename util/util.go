@@ -17,6 +17,12 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/bcrypt"
+	"crypto/x509"
+	"encoding/pem"
+	"crypto/rand"
+	"io/ioutil"
+	"path/filepath"
+	"io"
 )
 
 const (
@@ -24,6 +30,8 @@ const (
 	AuthHeaderName  = "Authorization"
 	AuthValuePrefix = "Bearer"
 	BasicAuthPrefix = "Basic"
+	RsaDirectory    = "/var/lib/rancher/cube"
+	RsaBitSize      = 4096
 )
 
 func RegisterShutdownChannel(done chan struct{}) {
@@ -184,4 +192,181 @@ func Int32ToString(n int32) string {
 			return string(buf[pos:])
 		}
 	}
+}
+
+func GenerateRSA256() error {
+	// make sure the rsa directory is exist
+	if _, err := os.Stat(RsaDirectory); err != nil {
+		err = os.MkdirAll(RsaDirectory, os.ModeDir|0700)
+		if err != nil {
+			return err
+		}
+	}
+
+	// if no rsa private/public key file re-generate it
+	if !CheckRSAKeyFileExist() {
+		privateKey, err := GeneratePrivateKey()
+		if err != nil {
+			logrus.Errorf("generate private key error: %v", err)
+			return err
+		}
+
+		publicKeyBytes, err := GeneratePublicKey(privateKey)
+		if err != nil {
+			logrus.Errorf("generate public key bytes error: %v", err)
+			return err
+		}
+
+		privateKeyBytes := PrivateKeyToPEM(privateKey)
+
+		err = WriteKeyToFile(privateKeyBytes, RsaDirectory+"/id_rsa")
+		if err != nil {
+			logrus.Errorf("write private key file error: %v", err)
+			return err
+		}
+
+		err = WriteKeyToFile([]byte(publicKeyBytes), RsaDirectory+"/id_rsa.pub")
+		if err != nil {
+			logrus.Errorf("write public key file error: %v", err)
+			return err
+		}
+	}
+
+	return nil
+}
+
+func GeneratePrivateKey() (*rsa.PrivateKey, error) {
+	privateKey, err := rsa.GenerateKey(rand.Reader, RsaBitSize)
+	if err != nil {
+		return nil, err
+	}
+
+	err = privateKey.Validate()
+	if err != nil {
+		return nil, err
+	}
+
+	return privateKey, nil
+}
+
+func PrivateKeyToPEM(privateKey *rsa.PrivateKey) []byte {
+	privateDER := x509.MarshalPKCS1PrivateKey(privateKey)
+
+	privateBlock := pem.Block{
+		Type:    "RSA PRIVATE KEY",
+		Headers: nil,
+		Bytes:   privateDER,
+	}
+
+	privatePEM := pem.EncodeToMemory(&privateBlock)
+
+	return privatePEM
+}
+
+func GeneratePublicKey(privateKey *rsa.PrivateKey) ([]byte, error) {
+	publicKey := privateKey.PublicKey
+	publicDER, err := x509.MarshalPKIXPublicKey(&publicKey)
+	if err != nil {
+		return nil, err
+	}
+
+	publicBlock := pem.Block{
+		Type:    "RSA PUBLIC KEY",
+		Headers: nil,
+		Bytes:   publicDER,
+	}
+
+	publicPEM := pem.EncodeToMemory(&publicBlock)
+
+	return publicPEM, nil
+}
+
+func CheckRSAKeyFileExist() bool {
+	if _, err := os.Stat(RsaDirectory + "/id_rsa"); err == nil {
+		if _, err = os.Stat(RsaDirectory + "/id_rsa.pub"); err == nil {
+			return true
+		}
+
+		err = os.Remove(RsaDirectory + "/id_rsa.pub")
+		if err != nil {
+			logrus.Errorf("remove id_rsa.pub file error: %v", err)
+		}
+
+		err = os.Remove(RsaDirectory + "/id_rsa")
+		if err != nil {
+			logrus.Errorf("remove id_rsa file error: %v", err)
+		}
+	}
+
+	return false
+}
+
+func WriteKeyToFile(keyBytes []byte, saveFileTo string) error {
+	err := ioutil.WriteFile(saveFileTo, keyBytes, 0600)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func CopyDir(src string, dest string) {
+	srcOriginal := src
+	err := filepath.Walk(src, func(src string, f os.FileInfo, err error) error {
+		if f == nil {
+			return err
+		}
+		if f.IsDir() {
+			//CopyDir(f.Name(), dest+"/"+f.Name())
+		} else {
+			destNew := strings.Replace(src, srcOriginal, dest, -1)
+			CopyFile(src, destNew)
+		}
+		return nil
+	})
+	if err != nil {
+		logrus.Errorf("file path walk error: %v", err)
+	}
+}
+
+func CopyFile(src, dst string) (w int64, err error) {
+	srcFile, err := os.Open(src)
+	if err != nil {
+		logrus.Errorf("open file error: %v", err)
+		return
+	}
+	defer srcFile.Close()
+	dstSlices := strings.Split(dst, "/")
+	dstSlicesLen := len(dstSlices)
+	destDir := ""
+	for i := 0; i < dstSlicesLen-1; i++ {
+		destDir = destDir + dstSlices[i] + "/"
+	}
+	b, err := PathExists(destDir)
+	if b == false {
+		err := os.Mkdir(destDir, os.ModePerm)
+		if err != nil {
+			logrus.Errorf("mkdir error: %v", err)
+		}
+	}
+	dstFile, err := os.Create(dst)
+	if err != nil {
+		logrus.Errorf("create file error: %v", err)
+		return
+	}
+
+	defer dstFile.Close()
+
+	return io.Copy(dstFile, srcFile)
+}
+
+func PathExists(path string) (bool, error) {
+	_, err := os.Stat(path)
+	if err == nil {
+		return true, nil
+	}
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return false, err
 }

@@ -62,6 +62,7 @@ func NewInfraController(
 	// obtain references to shared index informers for the Deployment and Infrastructure
 	// types.
 	deploymentInformer := informerFactory.Apps().V1().Deployments()
+	podInformer := informerFactory.Core().V1().Pods()
 	infraInformer := infraInformerFactory.Cube().V1alpha1().Infrastructures()
 	serviceInformer := informerFactory.Core().V1().Services()
 
@@ -116,6 +117,18 @@ func NewInfraController(
 		DeleteFunc: controller.handleObject,
 	})
 
+	podInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		UpdateFunc: func(old, new interface{}) {
+			newPod := new.(*corev1.Pod)
+			oldPod := old.(*corev1.Pod)
+			if newPod.ResourceVersion == oldPod.ResourceVersion {
+				// Periodic resync will send update events for all known Deployments.
+				// Two different versions of the same Deployment will always have different RVs.
+				return
+			}
+			controller.handleObject(new)
+		},
+	})
 	return controller
 
 }

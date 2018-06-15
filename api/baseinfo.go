@@ -2,27 +2,17 @@ package api
 
 import (
 	"net/http"
-
-	"github.com/pkg/errors"
 	"io"
 	"context"
-	"github.com/Sirupsen/logrus"
 	"time"
-	"k8s.io/client-go/tools/cache"
+
 	"github.com/cnrancher/cube-apiserver/k8s/pkg/apis/cube/v1alpha1"
+
+	"github.com/pkg/errors"
+	"github.com/Sirupsen/logrus"
+	"k8s.io/client-go/tools/cache"
 	"encoding/json"
 )
-
-//func (s *Server) BaseInfoGet(w http.ResponseWriter, req *http.Request) error {
-//	apiContext := api.GetApiContext(req)
-//
-//	baseInfo, err := s.c.BaseInfoGet()
-//	if err != nil {
-//		return errors.Wrap(err, "failed to read base info")
-//	}
-//	apiContext.Write(toBaseInfo(baseInfo))
-//	return nil
-//}
 
 func (s *Server) BaseInfoGet(w http.ResponseWriter, req *http.Request) error {
 	w.Header().Set("Content-Type", "text/event-stream")
@@ -34,10 +24,6 @@ func (s *Server) BaseInfoGet(w http.ResponseWriter, req *http.Request) error {
 	if !ok {
 		return errors.New("Streaming not supported")
 	}
-
-	// ping the client
-	//io.WriteString(w, ": ping\n\n")
-	//flusher.Flush()
 
 	baseInfo, err := s.c.BaseInfoGet()
 	if err != nil {

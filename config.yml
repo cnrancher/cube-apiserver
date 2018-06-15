@@ -1,6 +1,6 @@
 ---
 #kubernetes config
-kube_config: /home/ubuntu/kube_config
+kube_config: /var/lib/rancher/cube/kube-config.yml
 
 #Infrastructure images
 infra_images:

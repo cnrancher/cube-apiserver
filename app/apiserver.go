@@ -2,7 +2,11 @@ package app
 
 import (
 	"fmt"
+	"os"
+	"io/ioutil"
+	"reflect"
 	"net/http"
+	"path/filepath"
 
 	"github.com/cnrancher/cube-apiserver/api"
 	"github.com/cnrancher/cube-apiserver/backend"
@@ -12,11 +16,7 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/urfave/cli"
-	"path/filepath"
-	"os"
-	"io/ioutil"
 	"gopkg.in/yaml.v2"
-	"reflect"
 )
 
 const (
@@ -125,6 +125,8 @@ func startAPIServer(c *cli.Context) error {
 	clientGenerator.VirtualMachineCRDDeploy()
 	// generate & deploy cusConfig map resources for base info
 	clientGenerator.ConfigMapDeploy()
+	// generate logo path
+	util.CopyDir("assets/images", controller.FrontendPath+"/images")
 
 	done := make(chan struct{})
 

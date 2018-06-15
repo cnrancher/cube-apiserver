@@ -2,7 +2,6 @@ package api
 
 import (
 	"crypto/rsa"
-	"io/ioutil"
 	"net/http"
 	"time"
 
@@ -18,12 +17,11 @@ import (
 	"github.com/rancher/go-rancher/client"
 	"github.com/urfave/negroni"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"github.com/cnrancher/cube-apiserver/controller"
 )
 
 const (
 	UserPropertyName = "CUBE-USER-PROPERTY"
-	PrivateKeyPath   = "/var/lib/rancher/cube/id_rsa"
-	PublicKeyPath    = "/var/lib/rancher/cube/id_rsa.pub"
 )
 
 var (
@@ -34,28 +32,6 @@ var (
 )
 
 type HandleFuncWithError func(http.ResponseWriter, *http.Request) error
-
-func init() {
-	signBytes, err := ioutil.ReadFile(PrivateKeyPath)
-	if err != nil {
-		logrus.Fatal(err)
-	}
-
-	JwtSignKey, err = jwt.ParseRSAPrivateKeyFromPEM(signBytes)
-	if err != nil {
-		logrus.Fatal(err)
-	}
-
-	verifyBytes, err := ioutil.ReadFile(PublicKeyPath)
-	if err != nil {
-		logrus.Fatal(err)
-	}
-
-	JwtVerifyKey, err = jwt.ParseRSAPublicKeyFromPEM(verifyBytes)
-	if err != nil {
-		logrus.Fatal(err)
-	}
-}
 
 func HandleError(s *client.Schemas, t HandleFuncWithError) http.Handler {
 	return api.ApiHandler(s, http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
@@ -74,6 +50,14 @@ func HandleError(s *client.Schemas, t HandleFuncWithError) http.Handler {
 			apiContext.WriteErr(err)
 		}
 	}))
+}
+
+func generateRSAKey(s *Server) (*rsa.PrivateKey, *rsa.PublicKey) {
+	jwtSignKey, jwtVerifyKey, err := s.c.GetRSAKey()
+	if err != nil {
+		logrus.Fatal(err)
+	}
+	return jwtSignKey, jwtVerifyKey
 }
 
 func generatePrivateKey() *jwtmiddleware.JWTMiddleware {
@@ -147,9 +131,8 @@ func NewRouter(s *Server) *mux.Router {
 		negroni.NewRecovery(),
 		negroni.NewLogger(),
 	)
-	//---------
-	commonMiddleware.Use(negroni.NewStatic(http.Dir("/home/ubuntu/dist")))
-	//---------
+	commonMiddleware.Use(negroni.NewStatic(http.Dir(controller.FrontendPath)))
+	JwtSignKey, JwtVerifyKey = generateRSAKey(s)
 	jwtMiddleware := generatePrivateKey()
 
 	router.PathPrefix("/v1").Handler(commonMiddleware.With(

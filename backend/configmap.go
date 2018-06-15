@@ -1,16 +1,18 @@
 package backend
 
 import (
+	"github.com/cnrancher/cube-apiserver/util"
+	"github.com/cnrancher/cube-apiserver/controller"
+
 	"k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"github.com/cnrancher/cube-apiserver/util"
-	"github.com/cnrancher/cube-apiserver/controller"
 )
 
 var (
 	ConfigMapName   = "cube-rancher"
 	Infrastructures *infrastructures
+	LogoBasePath    = "images/"
 )
 
 type infrastructure struct {
@@ -73,19 +75,19 @@ func (c *ClientGenerator) ConfigMapDeploy() (*v1.ConfigMap, error) {
 
 			Infrastructures.dashboard.name:      controller.DashboardName,
 			Infrastructures.dashboard.namespace: controller.DashboardNamespace,
-			Infrastructures.dashboard.icon:      "https://avatars3.githubusercontent.com/u/13629408?s=200&v=4",
+			Infrastructures.dashboard.icon:      LogoBasePath + "logo_dashboard.png",
 			Infrastructures.dashboard.desc:      controller.DashboardDesc,
 			Infrastructures.dashboard.kind:      controller.DashboardKind,
 
 			Infrastructures.longhorn.name:      controller.LonghornName,
 			Infrastructures.longhorn.namespace: controller.LonghornNamespace,
-			Infrastructures.longhorn.icon:      "http://www.longhorninc.com/wp-content/themes/Longhorn/images/logo.png",
+			Infrastructures.longhorn.icon:      LogoBasePath + "logo_longhorn.svg",
 			Infrastructures.longhorn.desc:      controller.LanghornDesc,
 			Infrastructures.longhorn.kind:      controller.LanghornKind,
 
 			Infrastructures.rancherVM.name:      controller.RancherVMName,
 			Infrastructures.rancherVM.namespace: controller.RancherVMNamespace,
-			Infrastructures.rancherVM.icon:      "https://avatars3.githubusercontent.com/u/9343010?s=200&v=4",
+			Infrastructures.rancherVM.icon:      LogoBasePath + "logo_ranchervm.jpg",
 			Infrastructures.rancherVM.desc:      controller.RancherVMDesc,
 			Infrastructures.rancherVM.kind:      controller.RancherVMKind,
 		},

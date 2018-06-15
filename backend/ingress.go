@@ -2,10 +2,11 @@ package backend
 
 import (
 	"fmt"
+	"time"
+
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/api/core/v1"
 	"github.com/pkg/errors"
-	"time"
 )
 
 var (
@@ -18,6 +19,10 @@ func (c *ClientGenerator) ServiceGet(ns, id string) error {
 	}
 	doneCh := make(chan string)
 	go c.syncService(ns, id, doneCh)
+	go func() {
+		time.Sleep(30 * time.Second)
+		doneCh <- "done"
+	}()
 	<-doneCh
 	return nil
 }
@@ -49,19 +54,5 @@ func (c *ClientGenerator) NodeIPGet() (string, error) {
 			ip = address.Address
 		}
 	}
-
-	//from annotation
-	//if nodes.Items[0].Annotations == nil {
-	//	nodes.Items[0].Annotations = make(map[string]string)
-	//}
-	//
-	//if ip, ok := nodes.Items[0].Annotations[rkeExternalAddressAnnotation]; ok {
-	//	return ip, nil
-	//}
-	//
-	//if ip, ok := nodes.Items[0].Annotations[rkeInternalAddressAnnotation]; ok {
-	//	return ip, nil
-	//}
-
 	return ip, nil
 }

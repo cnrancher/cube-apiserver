@@ -1,10 +1,11 @@
 package backend
 
 import (
+	"github.com/cnrancher/cube-apiserver/controller"
+
 	"k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"github.com/cnrancher/cube-apiserver/controller"
 )
 
 var (
@@ -25,22 +26,6 @@ func getConfigMapInfo(c *ClientGenerator) (*v1.ConfigMap, error) {
 	return configMap, nil
 
 }
-
-//func loop(watcher watch.Interface, db *v1alpha1.Infrastructure) {
-//Loop:
-//	for {
-//		select {
-//		case data := <-watcher.ResultChan():
-//			object := data.Object.(*v1alpha1.Infrastructure)
-//			if data.Type == "MODIFIED" && object.Name == db.Name {
-//				break Loop
-//			}
-//		case <-time.After(time.Duration(10) * time.Second):
-//			break Loop
-//		}
-//	}
-//	return
-//}
 
 func ensureNamespaceExists(c *ClientGenerator, namespace string) error {
 	_, err := c.Clientset.CoreV1().Namespaces().Create(&v1.Namespace{
