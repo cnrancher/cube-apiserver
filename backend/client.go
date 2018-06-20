@@ -5,6 +5,8 @@ import (
 
 	infracs "github.com/cnrancher/cube-apiserver/k8s/pkg/client/clientset/versioned"
 	cubeinformers "github.com/cnrancher/cube-apiserver/k8s/pkg/client/informers/externalversions"
+	"github.com/cnrancher/cube-apiserver/k8s/pkg/apis/cube/v1alpha1"
+	infomerv1alpha1 "github.com/cnrancher/cube-apiserver/k8s/pkg/client/informers/externalversions/cube/v1alpha1"
 
 	"github.com/Sirupsen/logrus"
 	apics "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
@@ -14,8 +16,6 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	listerscorev1 "k8s.io/client-go/listers/core/v1"
 	"k8s.io/client-go/tools/cache"
-	"github.com/cnrancher/cube-apiserver/k8s/pkg/apis/cube/v1alpha1"
-	infomerv1alpha1 "github.com/cnrancher/cube-apiserver/k8s/pkg/client/informers/externalversions/cube/v1alpha1"
 	"k8s.io/client-go/informers/core/v1"
 )
 

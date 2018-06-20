@@ -10,6 +10,12 @@ import (
 	"strings"
 	"syscall"
 	"time"
+	"crypto/x509"
+	"encoding/pem"
+	"crypto/rand"
+	"io/ioutil"
+	"path/filepath"
+	"io"
 
 	"github.com/cnrancher/cube-apiserver/k8s/pkg/apis/cube/v1alpha1"
 
@@ -17,12 +23,6 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/bcrypt"
-	"crypto/x509"
-	"encoding/pem"
-	"crypto/rand"
-	"io/ioutil"
-	"path/filepath"
-	"io"
 )
 
 const (

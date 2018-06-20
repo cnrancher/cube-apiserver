@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/cnrancher/cube-apiserver/backend"
+	"github.com/rancher/go-rancher/api"
+	"github.com/rancher/go-rancher/client"
 	"github.com/cnrancher/cube-apiserver/util"
 
 	"github.com/Sirupsen/logrus"
@@ -13,11 +15,8 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-	"github.com/rancher/go-rancher/api"
-	"github.com/rancher/go-rancher/client"
 	"github.com/urfave/negroni"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"github.com/cnrancher/cube-apiserver/controller"
 )
 
 const (
@@ -131,7 +130,6 @@ func NewRouter(s *Server) *mux.Router {
 		negroni.NewRecovery(),
 		negroni.NewLogger(),
 	)
-	commonMiddleware.Use(negroni.NewStatic(http.Dir(controller.FrontendPath)))
 	JwtSignKey, JwtVerifyKey = generateRSAKey(s)
 	jwtMiddleware := generatePrivateKey()
 

@@ -4,11 +4,11 @@ import (
 	"reflect"
 
 	"github.com/cnrancher/cube-apiserver/k8s/pkg/apis/cube/v1alpha1"
+	"github.com/cnrancher/cube-apiserver/controller"
 
 	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"github.com/cnrancher/cube-apiserver/controller"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -17,8 +17,6 @@ import (
 const (
 	InfraPlural   = "infrastructures"
 	InfraGroup    = "cube.rancher.io"
-	InfraVersion  = "v1alpha1"
-	InfraFullName = InfraPlural + "." + InfraGroup
 )
 
 var (

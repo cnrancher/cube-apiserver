@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"io"
 	"context"
+	"encoding/json"
 	"time"
 
 	"github.com/cnrancher/cube-apiserver/k8s/pkg/apis/cube/v1alpha1"
@@ -11,7 +12,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/Sirupsen/logrus"
 	"k8s.io/client-go/tools/cache"
-	"encoding/json"
 )
 
 func (s *Server) BaseInfoGet(w http.ResponseWriter, req *http.Request) error {
