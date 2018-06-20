@@ -17,6 +17,7 @@ if echo $TAG | grep -q dirty; then
 fi
 
 cp ../bin/rancher-cube-apiserver .
+cp ../config.yml .
 
 IMAGE=${REPO}/cube-apiserver:${TAG}
 docker build -t ${IMAGE} .

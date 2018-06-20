@@ -32,7 +32,7 @@ const (
 	UserIDLabel                   = "auth.user.cube.rancher.io/token-user-id"
 	ClusterRoleBindingByNameIndex = "auth.user.cube.rancher.io/crb-name"
 	ClusterRoleByNameIndex        = "auth.user.cube.rancher.io/cr-name"
-	FrontendPath                  = "/root/go/src/github.com/cnrancher/dist"
+	FrontendPath                  = "/go/src/github.com/cnrancher/cube-ui"
 
 	DashboardName      = "kubernetes-dashboard"
 	DashboardNamespace = "kube-system"

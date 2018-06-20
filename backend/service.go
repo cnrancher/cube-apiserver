@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"k8s.io/client-go/tools/cache"
-	"k8s.io/api/core/v1"
 	"github.com/pkg/errors"
+	"k8s.io/api/core/v1"
+	"k8s.io/client-go/tools/cache"
 )
 
 var (

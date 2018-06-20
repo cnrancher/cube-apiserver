@@ -11,7 +11,7 @@ import (
 
 var KubeConfigLocation string
 
-var sType *schemaType
+var sType *SchemaType
 
 type CubeConfig struct {
 	// Cluster Name used in the kube config
@@ -20,23 +20,17 @@ type CubeConfig struct {
 	InfraImages v1alpha1.InfraImages `yaml:"infra_images" json:"infraImages,omitempty"`
 }
 
-type schemaType struct {
-	Configmap string
-	//Dashboard      string
-	//Longhorn       string
-	//RancherVM      string
+type SchemaType struct {
+	Configmap      string
 	BaseInfo       string
 	Infrastructure string
 }
 
-func GetSchemaType() *schemaType {
+func GetSchemaType() *SchemaType {
 	if sType == nil {
-		sType = &schemaType{
-			Configmap: "configmap",
-			//Dashboard:      "dashboard",
-			//Longhorn:       "longhorn",
-			BaseInfo: "baseinfo",
-			//RancherVM:      "ranchervm",
+		sType = &SchemaType{
+			Configmap:      "configmap",
+			BaseInfo:       "baseinfo",
 			Infrastructure: "infrastructure",
 		}
 	}
@@ -200,44 +194,12 @@ func toInfrastructureResource(infra *v1alpha1.Infrastructure, service *v1.Servic
 	}
 }
 
-//func toInfrastructureCollection(list *v1alpha1.InfrastructureList, infraType string) *client.GenericCollection {
-//	data := []interface{}{}
-//	for _, item := range list.Items {
-//		data = append(data, toInfrastructureResource(&item, infraType, nil, ""))
-//	}
-//	return &client.GenericCollection{Data: data, Collection: client.Collection{ResourceType: infraType}}
-//}
-//
-//func toInfrastructureResource(infra *v1alpha1.Infrastructure, infraType string, service *v1.Service, ip string) *Infrastructure {
-//	name := infra.GetName()
-//	host := ip
-//
-//	if service != nil {
-//		port := service.Spec.Ports[0].NodePort
-//		host = host + ":" + util.Int32ToString(port)
-//	}
-//	if name == "" {
-//		return nil
-//	}
-//	return &Infrastructure{
-//		Resource: client.Resource{
-//			Id:      string(name),
-//			Type:    infraType,
-//			Actions: map[string]string{},
-//		},
-//		Host:      host,
-//		Dashboard: infra,
-//		Longhorn:  infra,
-//		RancherVM: infra,
-//	}
-//}
-
-func toDeleteResource(resType string) *Result {
+func toDeleteResource() *Result {
 	return &Result{
 		Resource: client.Resource{
-			Id:               string("delete success"),
-			Type: /*resType*/ GetSchemaType().Infrastructure,
-			Actions:          map[string]string{},
+			Id:      string("delete success"),
+			Type:    GetSchemaType().Infrastructure,
+			Actions: map[string]string{},
 		},
 		Message: "delete success",
 	}

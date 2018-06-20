@@ -1,8 +1,8 @@
 package backend
 
 import (
-	"github.com/cnrancher/cube-apiserver/util"
 	"github.com/cnrancher/cube-apiserver/controller"
+	"github.com/cnrancher/cube-apiserver/util"
 
 	"k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"

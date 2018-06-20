@@ -1,17 +1,17 @@
 package backend
 
 import (
-	"io/ioutil"
 	"crypto/rsa"
+	"io/ioutil"
 
-	"github.com/cnrancher/cube-apiserver/util"
 	"github.com/cnrancher/cube-apiserver/controller"
+	"github.com/cnrancher/cube-apiserver/util"
 
-	"k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"github.com/Sirupsen/logrus"
 	"github.com/dgrijalva/jwt-go"
+	"k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -35,33 +35,33 @@ func (c *ClientGenerator) GetRSAKey() (*rsa.PrivateKey, *rsa.PublicKey, error) {
 	if err != nil {
 		if !k8serrors.IsNotFound(err) {
 			return nil, nil, err
-		} else {
-			//generate RSA key
-			err := util.GenerateRSA256()
-			if err != nil {
-				return nil, nil, err
-			}
-			//read RSA key
-			privateKey, publicKey, err := readRSAKey()
-			if err != nil {
-				return nil, nil, err
-			}
-			//save RSA key
-			secret, err = c.Clientset.CoreV1().Secrets(controller.UserNamespace).Create(&v1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      SecretName,
-					Namespace: controller.UserNamespace,
-				},
-				Type: v1.SecretTypeOpaque,
-				Data: map[string][]byte{
-					PrivateKey: privateKey,
-					PublicKey:  publicKey,
-				},
-			})
-			if err != nil {
-				return nil, nil, err
-			}
 		}
+		//generate RSA key
+		err := util.GenerateRSA256()
+		if err != nil {
+			return nil, nil, err
+		}
+		//read RSA key
+		privateKey, publicKey, err := readRSAKey()
+		if err != nil {
+			return nil, nil, err
+		}
+		//save RSA key
+		secret, err = c.Clientset.CoreV1().Secrets(controller.UserNamespace).Create(&v1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      SecretName,
+				Namespace: controller.UserNamespace,
+			},
+			Type: v1.SecretTypeOpaque,
+			Data: map[string][]byte{
+				PrivateKey: privateKey,
+				PublicKey:  publicKey,
+			},
+		})
+		if err != nil {
+			return nil, nil, err
+		}
+
 	}
 
 	return ParseRSAKey(secret)

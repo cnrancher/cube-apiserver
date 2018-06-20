@@ -2,11 +2,11 @@ package app
 
 import (
 	"fmt"
-	"os"
 	"io/ioutil"
-	"reflect"
 	"net/http"
+	"os"
 	"path/filepath"
+	"reflect"
 
 	"github.com/cnrancher/cube-apiserver/api"
 	"github.com/cnrancher/cube-apiserver/backend"

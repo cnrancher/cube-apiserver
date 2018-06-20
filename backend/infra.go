@@ -3,20 +3,20 @@ package backend
 import (
 	"reflect"
 
-	"github.com/cnrancher/cube-apiserver/k8s/pkg/apis/cube/v1alpha1"
 	"github.com/cnrancher/cube-apiserver/controller"
+	"github.com/cnrancher/cube-apiserver/k8s/pkg/apis/cube/v1alpha1"
 
+	"github.com/pkg/errors"
 	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"github.com/pkg/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
-	InfraPlural   = "infrastructures"
-	InfraGroup    = "cube.rancher.io"
+	InfraPlural = "infrastructures"
+	InfraGroup  = "cube.rancher.io"
 )
 
 var (
@@ -64,8 +64,8 @@ func (c *ClientGenerator) BaseInfoGet() ([]map[string]string, error) {
 			"kind":   info.Data[Infrastructures.dashboard.name],
 			"icon":   info.Data[Infrastructures.dashboard.icon],
 			"desc":   info.Data[Infrastructures.dashboard.desc],
-			"status": status[ info.Data[Infrastructures.dashboard.name] ],
-			"state":  state[ info.Data[Infrastructures.dashboard.name] ],
+			"status": status[info.Data[Infrastructures.dashboard.name]],
+			"state":  state[info.Data[Infrastructures.dashboard.name]],
 			"url":    "/infrastructures",
 		},
 		{
@@ -73,8 +73,8 @@ func (c *ClientGenerator) BaseInfoGet() ([]map[string]string, error) {
 			"kind":   info.Data[Infrastructures.longhorn.name],
 			"icon":   info.Data[Infrastructures.longhorn.icon],
 			"desc":   info.Data[Infrastructures.longhorn.desc],
-			"status": status[ info.Data[Infrastructures.longhorn.name] ],
-			"state":  state[ info.Data[Infrastructures.longhorn.name] ],
+			"status": status[info.Data[Infrastructures.longhorn.name]],
+			"state":  state[info.Data[Infrastructures.longhorn.name]],
 			"url":    "/infrastructures",
 		},
 		{
@@ -82,8 +82,8 @@ func (c *ClientGenerator) BaseInfoGet() ([]map[string]string, error) {
 			"kind":   info.Data[Infrastructures.rancherVM.name],
 			"icon":   info.Data[Infrastructures.rancherVM.icon],
 			"desc":   info.Data[Infrastructures.rancherVM.desc],
-			"status": status[ info.Data[Infrastructures.rancherVM.name] ],
-			"state":  state[ info.Data[Infrastructures.rancherVM.name]],
+			"status": status[info.Data[Infrastructures.rancherVM.name]],
+			"state":  state[info.Data[Infrastructures.rancherVM.name]],
 			"url":    "/infrastructures",
 		},
 	}, nil

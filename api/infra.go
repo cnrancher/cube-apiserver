@@ -3,11 +3,11 @@ package api
 import (
 	"net/http"
 
-	"github.com/rancher/go-rancher/api"
 	"github.com/cnrancher/cube-apiserver/backend"
-	
-	"github.com/pkg/errors"
+	"github.com/rancher/go-rancher/api"
+
 	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
 )
 
 func (s *Server) InfrastructureList(rw http.ResponseWriter, req *http.Request) error {
@@ -65,6 +65,6 @@ func (s *Server) InfrastructureDelete(rw http.ResponseWriter, req *http.Request)
 	if err != nil {
 		return errors.Wrapf(err, "failed to delete infrastructure %s", kind)
 	}
-	apiContext.Write(toDeleteResource(kind))
+	apiContext.Write(toDeleteResource())
 	return nil
 }

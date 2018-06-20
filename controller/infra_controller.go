@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/api/extensions/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -25,11 +26,10 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	listers "k8s.io/client-go/listers/apps/v1"
+	listerscorev1 "k8s.io/client-go/listers/core/v1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
-	listerscorev1 "k8s.io/client-go/listers/core/v1"
-	"k8s.io/api/extensions/v1beta1"
 )
 
 type InfraController struct {
@@ -1167,7 +1167,7 @@ func (c *InfraController) createLonghorn(infra *infrav1alpha1.Infrastructure) (*
 				},
 			},
 			Spec: appsv1.DeploymentSpec{
-				Replicas: /*&replicas*/ infra.Spec.Replicas,
+				Replicas:/*&replicas*/ infra.Spec.Replicas,
 				Selector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{
 						"app": "longhorn-frontend",
@@ -1183,7 +1183,7 @@ func (c *InfraController) createLonghorn(infra *infrav1alpha1.Infrastructure) (*
 						Containers: []corev1.Container{
 							{
 								Name:  "longhorn-frontend",
-								Image: infra.Spec.Images.LonghornUi,
+								Image: infra.Spec.Images.LonghornUI,
 								Ports: []corev1.ContainerPort{
 									{
 										ContainerPort: 8000,

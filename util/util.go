@@ -1,21 +1,21 @@
 package util
 
 import (
+	"crypto/rand"
 	"crypto/rsa"
+	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
+	"encoding/pem"
+	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strings"
 	"syscall"
 	"time"
-	"crypto/x509"
-	"encoding/pem"
-	"crypto/rand"
-	"io/ioutil"
-	"path/filepath"
-	"io"
 
 	"github.com/cnrancher/cube-apiserver/k8s/pkg/apis/cube/v1alpha1"
 
