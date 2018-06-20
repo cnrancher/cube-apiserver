@@ -4,10 +4,10 @@ import (
 	"net/http"
 
 	"github.com/cnrancher/cube-apiserver/backend"
-	"github.com/rancher/go-rancher/api"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
+	"github.com/rancher/go-rancher/api"
 )
 
 func (s *Server) InfrastructureList(rw http.ResponseWriter, req *http.Request) error {
