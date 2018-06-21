@@ -1,6 +1,6 @@
 ---
 #kubernetes config
-kube_config: /var/lib/rancher/cube/kube-config.yml
+kube_config: /var/lib/rancher/cube/kube_config_rke_config.yml
 
 #Infrastructure images
 infra_images:
