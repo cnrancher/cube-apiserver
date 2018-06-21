@@ -19,15 +19,12 @@ func (c *ClientGenerator) ServiceGet(ns, id string) error {
 	}
 	doneCh := make(chan string)
 	go c.syncService(ns, id, doneCh)
-	go func() {
-		time.Sleep(30 * time.Second)
-		doneCh <- "done"
-	}()
 	<-doneCh
 	return nil
 }
 
 func (c *ClientGenerator) syncService(ns, id string, doneCh chan string) {
+	var d time.Duration
 	for true {
 		svc, err := c.serviceLister.Services(ns).Get(id)
 		if err == nil && svc != nil {
@@ -35,6 +32,10 @@ func (c *ClientGenerator) syncService(ns, id string, doneCh chan string) {
 			break
 		}
 		time.Sleep(20)
+		d = d + 20
+		if d > 2*time.Minute {
+			break
+		}
 	}
 	doneCh <- "done"
 }

@@ -53,16 +53,19 @@ func APIServerCmd() cli.Command {
 func resolveClusterFile(clusterFile string) (string, error) {
 	fp, err := filepath.Abs(clusterFile)
 	if err != nil {
-		return "", fmt.Errorf("failed to lookup current directory name: %v", err)
+		logrus.Errorf("RancherCUBE: failed to lookup current directory name: %v", err)
+		return "", err
 	}
 	file, err := os.Open(fp)
 	if err != nil {
-		return "", fmt.Errorf("Can not find cluster configuration file: %v", err)
+		logrus.Errorf("RancherCUBE: failed to find cluster configuration file: %v", err)
+		return "", err
 	}
 	defer file.Close()
 	buf, err := ioutil.ReadAll(file)
 	if err != nil {
-		return "", fmt.Errorf("failed to read file: %v", err)
+		logrus.Errorf("RancherCUBE: failed to read file: %v", err)
+		return "", err
 	}
 	clusterFileBuff := string(buf)
 	return clusterFileBuff, nil
@@ -81,21 +84,25 @@ func startAPIServer(c *cli.Context) error {
 	filePath := c.String(Config)
 	clusterFile, err := resolveClusterFile(ConfigFile)
 	if err != nil {
-		return fmt.Errorf("Failed to resolve default cluster file: %v", err)
+		logrus.Errorf("RancherCUBE: failed to resolve default cluster file: %v", err)
+		return err
 	}
 	config, err := ParseConfig(clusterFile)
 	if err != nil {
-		return fmt.Errorf("Failed to parse default cluster file: %v", err)
+		logrus.Errorf("RancherCUBE: failed to parse default cluster file: %v", err)
+		return err
 	}
 
 	if filePath != ConfigFile {
 		cusClusterFile, err := resolveClusterFile(filePath)
 		if err != nil {
-			return fmt.Errorf("Failed to resolve cluster file: %v", err)
+			logrus.Errorf("RancherCUBE: failed to resolve cluster file: %v", err)
+			return err
 		}
 		cusConfig, err := ParseConfig(cusClusterFile)
 		if err != nil {
-			return fmt.Errorf("Failed to parse cluster file: %v", err)
+			logrus.Errorf("RancherCUBE: failed to parse cluster file: %v", err)
+			return err
 		}
 
 		if cusConfig != nil {

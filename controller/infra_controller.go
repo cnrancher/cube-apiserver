@@ -1471,7 +1471,7 @@ func (c *InfraController) createRancherVM(infra *infrav1alpha1.Infrastructure) (
 								ImagePullPolicy: "Always",
 								Args: []string{
 									"--vm",
-									"--bridge-iface=ens33",
+									"--bridge-iface=eth0",
 									"--v=3",
 								},
 							},
@@ -1871,7 +1871,7 @@ func (c *InfraController) updateRancherVM(infra *infrav1alpha1.Infrastructure) (
 								ImagePullPolicy: "Always",
 								Args: []string{
 									"--vm",
-									"--bridge-iface=ens33",
+									"--bridge-iface=eth0",
 									"--v=3",
 								},
 							},
