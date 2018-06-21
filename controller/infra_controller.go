@@ -800,7 +800,7 @@ func (c *InfraController) createLonghorn(infra *infrav1alpha1.Infrastructure) (*
 				},
 				{
 					APIGroups: []string{""},
-					Resources: []string{"pods", "events", "persistentvolumes", "persistentvolumeclaims", "nodes", "proxy/nodes"},
+					Resources: []string{"pods", "events", "persistentvolumes", "persistentvolumeclaims", "nodes", "proxy/nodes", "pods/log", "secrets"},
 					Verbs:     []string{"*"},
 				},
 				{
@@ -820,27 +820,7 @@ func (c *InfraController) createLonghorn(infra *infrav1alpha1.Infrastructure) (*
 				},
 				{
 					APIGroups: []string{"longhorn.rancher.io"},
-					Resources: []string{"nodes"},
-					Verbs:     []string{"*"},
-				},
-				{
-					APIGroups: []string{"longhorn.rancher.io"},
-					Resources: []string{"volumes"},
-					Verbs:     []string{"*"},
-				},
-				{
-					APIGroups: []string{"longhorn.rancher.io"},
-					Resources: []string{"engines"},
-					Verbs:     []string{"*"},
-				},
-				{
-					APIGroups: []string{"longhorn.rancher.io"},
-					Resources: []string{"replicas"},
-					Verbs:     []string{"*"},
-				},
-				{
-					APIGroups: []string{"longhorn.rancher.io"},
-					Resources: []string{"settings"},
+					Resources: []string{"volumes", "engines", "replicas", "settings", "engineimages"},
 					Verbs:     []string{"*"},
 				},
 			},
@@ -921,9 +901,9 @@ func (c *InfraController) createLonghorn(infra *infrav1alpha1.Infrastructure) (*
 									"-d",
 									"daemon",
 									"--engine-image",
-									"rancher/longhorn-engine:91aa784",
+									infra.Spec.Images.LonghornEngine,
 									"--manager-image",
-									"rancher/longhorn-manager:b7f1b01",
+									infra.Spec.Images.LonghornManager,
 									"--service-account",
 									"longhorn-service-account",
 								},
@@ -1119,7 +1099,7 @@ func (c *InfraController) createLonghorn(infra *infrav1alpha1.Infrastructure) (*
 									"-d",
 									"deploy-flexvolume-driver",
 									"--manager-image",
-									"rancher/longhorn-manager:fabeb53",
+									infra.Spec.Images.LonghornFlexvolumeDriver,
 								},
 
 								Env: []corev1.EnvVar{
@@ -1168,7 +1148,7 @@ func (c *InfraController) createLonghorn(infra *infrav1alpha1.Infrastructure) (*
 				},
 			},
 			Spec: appsv1.DeploymentSpec{
-				Replicas:/*&replicas*/ infra.Spec.Replicas,
+				Replicas: infra.Spec.Replicas,
 				Selector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{
 						"app": "longhorn-frontend",
@@ -1335,8 +1315,7 @@ func (c *InfraController) createRancherVM(infra *infrav1alpha1.Infrastructure) (
 						HostNetwork: true,
 						Containers: []corev1.Container{
 							{
-								Name: "ip-controller",
-								//Image:           "rancher/vm",
+								Name:            "ip-controller",
 								Image:           infra.Spec.Images.RancherVM,
 								ImagePullPolicy: "Always",
 								Command: []string{
@@ -1356,8 +1335,7 @@ func (c *InfraController) createRancherVM(infra *infrav1alpha1.Infrastructure) (
 								},
 							},
 							{
-								Name: "arp-scanner",
-								//Image:           "rancher/vm",
+								Name:            "arp-scanner",
 								Image:           infra.Spec.Images.RancherVM,
 								ImagePullPolicy: "Always",
 								Command: []string{
@@ -1396,7 +1374,6 @@ func (c *InfraController) createRancherVM(infra *infrav1alpha1.Infrastructure) (
 					{
 						Name: "api",
 						Port: 9500,
-						//TargetPort: intstr.FromInt(9090),
 					},
 				},
 				Selector: map[string]string{
@@ -1441,7 +1418,6 @@ func (c *InfraController) createRancherVM(infra *infrav1alpha1.Infrastructure) (
 		}
 
 		// create ranchervm controller deployment
-		//controllerReplica := int32(2)
 		_, err = c.clientset.AppsV1().Deployments(RancherVMNamespace).Create(&appsv1.Deployment{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "ranchervm-controller",
@@ -1490,8 +1466,7 @@ func (c *InfraController) createRancherVM(infra *infrav1alpha1.Infrastructure) (
 						},
 						Containers: []corev1.Container{
 							{
-								Name: "ranchervm-controller",
-								//Image:           "rancher/vm",
+								Name:            "ranchervm-controller",
 								Image:           infra.Spec.Images.RancherVM,
 								ImagePullPolicy: "Always",
 								Args: []string{
@@ -1559,8 +1534,7 @@ func (c *InfraController) createRancherVM(infra *infrav1alpha1.Infrastructure) (
 						},
 						Containers: []corev1.Container{
 							{
-								Name: "ranchervm-backend",
-								//Image:           "rancher/vm",
+								Name:            "ranchervm-backend",
 								Image:           infra.Spec.Images.RancherVM,
 								ImagePullPolicy: "Always",
 								Args: []string{
@@ -1626,8 +1600,7 @@ func (c *InfraController) createRancherVM(infra *infrav1alpha1.Infrastructure) (
 						},
 						Containers: []corev1.Container{
 							{
-								Name: "ranchervm-frontend",
-								//Image:           "rancher/vm-frontend",
+								Name:            "ranchervm-frontend",
 								Image:           infra.Spec.Images.RancherVMFrontend,
 								ImagePullPolicy: "Always",
 								Env: []corev1.EnvVar{
@@ -1690,7 +1663,7 @@ func (c *InfraController) updateDashboard(infra *infrav1alpha1.Infrastructure) (
 						Containers: []corev1.Container{
 							{
 								Name:  "kubernetes-dashboard",
-								Image: "k8s.gcr.io/kubernetes-dashboard-amd64:v1.8.3",
+								Image: infra.Spec.Images.Dashboard,
 								Ports: []corev1.ContainerPort{
 									{
 										ContainerPort: 9090,
@@ -1795,7 +1768,7 @@ func (c *InfraController) updateLonghorn(infra *infrav1alpha1.Infrastructure) (*
 						Containers: []corev1.Container{
 							{
 								Name:            "longhorn-flexvolume-driver-deployer",
-								Image:           "rancher/longhorn-manager:fabeb53",
+								Image:           infra.Spec.Images.LonghornFlexvolumeDriver,
 								ImagePullPolicy: "Always",
 
 								Command: []string{
@@ -1803,7 +1776,7 @@ func (c *InfraController) updateLonghorn(infra *infrav1alpha1.Infrastructure) (*
 									"-d",
 									"deploy-flexvolume-driver",
 									"--manager-image",
-									"rancher/longhorn-manager:fabeb53",
+									infra.Spec.Images.LonghornFlexvolumeDriver,
 								},
 
 								Env: []corev1.EnvVar{
@@ -1842,5 +1815,211 @@ func (c *InfraController) updateLonghorn(infra *infrav1alpha1.Infrastructure) (*
 }
 
 func (c *InfraController) updateRancherVM(infra *infrav1alpha1.Infrastructure) (*appsv1.Deployment, error) {
-	return nil, nil
+	err := c.ensureNamespaceExists(RancherVMNamespace)
+	if err == nil || k8serrors.IsAlreadyExists(err) {
+		// update ranchervm controller deployment
+		_, err = c.clientset.AppsV1().Deployments(RancherVMNamespace).Create(&appsv1.Deployment{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "ranchervm-controller",
+				Namespace: RancherVMNamespace,
+				OwnerReferences: []metav1.OwnerReference{
+					*metav1.NewControllerRef(infra, schema.GroupVersionKind{
+						Group:   infrav1alpha1.SchemeGroupVersion.Group,
+						Version: infrav1alpha1.SchemeGroupVersion.Version,
+						Kind:    "Infrastructure",
+					}),
+				},
+			},
+			Spec: appsv1.DeploymentSpec{
+				Replicas: infra.Spec.Replicas,
+				Selector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"app": "ranchervm-controller",
+					},
+				},
+				Template: corev1.PodTemplateSpec{
+					ObjectMeta: metav1.ObjectMeta{
+						Labels: map[string]string{
+							"app": "ranchervm-controller",
+						},
+					},
+					Spec: corev1.PodSpec{
+						Affinity: &corev1.Affinity{
+							PodAntiAffinity: &corev1.PodAntiAffinity{
+								RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
+									{
+										LabelSelector: &metav1.LabelSelector{
+											MatchExpressions: []metav1.LabelSelectorRequirement{
+												{
+													Key:      "app",
+													Operator: "In",
+													Values: []string{
+														"ranchervm-controller",
+													},
+												},
+											},
+										},
+										TopologyKey: "kubernetes.io/hostname",
+									},
+								},
+							},
+						},
+						Containers: []corev1.Container{
+							{
+								Name:            "ranchervm-controller",
+								Image:           infra.Spec.Images.RancherVM,
+								ImagePullPolicy: "Always",
+								Args: []string{
+									"--vm",
+									"--bridge-iface=ens33",
+									"--v=3",
+								},
+							},
+						},
+						ServiceAccountName: "ranchervm-service-account",
+					},
+				},
+			},
+		})
+		if err != nil && !k8serrors.IsAlreadyExists(err) {
+			return nil, err
+		}
+
+		// update ranchervm backend deployment
+		_, err = c.clientset.AppsV1().Deployments(RancherVMNamespace).Create(&appsv1.Deployment{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "ranchervm-backend",
+				Namespace: RancherVMNamespace,
+				OwnerReferences: []metav1.OwnerReference{
+					*metav1.NewControllerRef(infra, schema.GroupVersionKind{
+						Group:   infrav1alpha1.SchemeGroupVersion.Group,
+						Version: infrav1alpha1.SchemeGroupVersion.Version,
+						Kind:    "Infrastructure",
+					}),
+				},
+			},
+			Spec: appsv1.DeploymentSpec{
+				Replicas: infra.Spec.Replicas,
+				Selector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"app": "ranchervm-backend",
+					},
+				},
+				Template: corev1.PodTemplateSpec{
+					ObjectMeta: metav1.ObjectMeta{
+						Labels: map[string]string{
+							"app": "ranchervm-backend",
+						},
+					},
+					Spec: corev1.PodSpec{
+						Affinity: &corev1.Affinity{
+							PodAntiAffinity: &corev1.PodAntiAffinity{
+								RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
+									{
+										LabelSelector: &metav1.LabelSelector{
+											MatchExpressions: []metav1.LabelSelectorRequirement{
+												{
+													Key:      "app",
+													Operator: "In",
+													Values: []string{
+														"ranchervm-backend",
+													},
+												},
+											},
+										},
+										TopologyKey: "kubernetes.io/hostname",
+									},
+								},
+							},
+						},
+						Containers: []corev1.Container{
+							{
+								Name:            "ranchervm-backend",
+								Image:           infra.Spec.Images.RancherVM,
+								ImagePullPolicy: "Always",
+								Args: []string{
+									"--backend",
+								},
+							},
+						},
+						ServiceAccountName: "ranchervm-service-account",
+					},
+				},
+			},
+		})
+		if err != nil && !k8serrors.IsAlreadyExists(err) {
+			return nil, err
+		}
+
+		// update ranchervm frontend deployment
+		deployment, err := c.clientset.AppsV1().Deployments(RancherVMNamespace).Create(&appsv1.Deployment{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "ranchervm-frontend",
+				Namespace: RancherVMNamespace,
+				OwnerReferences: []metav1.OwnerReference{
+					*metav1.NewControllerRef(infra, schema.GroupVersionKind{
+						Group:   infrav1alpha1.SchemeGroupVersion.Group,
+						Version: infrav1alpha1.SchemeGroupVersion.Version,
+						Kind:    "Infrastructure",
+					}),
+				},
+			},
+			Spec: appsv1.DeploymentSpec{
+				Replicas: infra.Spec.Replicas,
+				Selector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"app": "ranchervm-frontend",
+					},
+				},
+				Template: corev1.PodTemplateSpec{
+					ObjectMeta: metav1.ObjectMeta{
+						Labels: map[string]string{
+							"app": "ranchervm-frontend",
+						},
+					},
+					Spec: corev1.PodSpec{
+						Affinity: &corev1.Affinity{
+							PodAntiAffinity: &corev1.PodAntiAffinity{
+								RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
+									{
+										LabelSelector: &metav1.LabelSelector{
+											MatchExpressions: []metav1.LabelSelectorRequirement{
+												{
+													Key:      "app",
+													Operator: "In",
+													Values: []string{
+														"ranchervm-frontend",
+													},
+												},
+											},
+										},
+										TopologyKey: "kubernetes.io/hostname",
+									},
+								},
+							},
+						},
+						Containers: []corev1.Container{
+							{
+								Name:            "ranchervm-frontend",
+								Image:           infra.Spec.Images.RancherVMFrontend,
+								ImagePullPolicy: "Always",
+								Env: []corev1.EnvVar{
+									{
+										Name:  "LONGHORN_MANAGER_IP",
+										Value: "http://ranchervm-backend:9500",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		})
+		if err != nil && !k8serrors.IsAlreadyExists(err) {
+			return nil, err
+		}
+
+		return deployment, nil
+	}
+	return nil, err
 }

@@ -46,6 +46,8 @@ type InfraImages struct {
 	Dashboard string `yaml:"dashboard" json:"dashboard,omitempty"`
 	//Longhorn Manager image
 	LonghornManager string `yaml:"longhorn_manager" json:"longhornManager,omitempty"`
+	//Longhorn Engine image
+	LonghornEngine string `yaml:"longhorn_engine" json:"longhornEngine,omitempty"`
 	//Longhorn Driver image
 	LonghornFlexvolumeDriver string `yaml:"longhorn_flexvolume-driver" json:"longhornFlexvolumeDriver,omitempty"`
 	//Longhorn Ui image

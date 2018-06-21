@@ -14,11 +14,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const (
-	InfraPlural = "infrastructures"
-	InfraGroup  = "cube.rancher.io"
-)
-
 var (
 	replicas int32 = 1
 	status   map[string]string
@@ -60,7 +55,7 @@ func (c *ClientGenerator) BaseInfoGet() ([]map[string]string, error) {
 
 	return []map[string]string{
 		{
-			"name":   "k8s dashboard",
+			"name":   "Dashboard",
 			"kind":   info.Data[Infrastructures.dashboard.name],
 			"icon":   info.Data[Infrastructures.dashboard.icon],
 			"desc":   info.Data[Infrastructures.dashboard.desc],

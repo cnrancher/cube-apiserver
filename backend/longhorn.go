@@ -34,7 +34,40 @@ const (
 	VolumePlural   = "volumes"
 	VolumeList     = "VolumeList"
 	VolumeFullName = VolumePlural + "." + LonghornGroup
+
+	EngineImageKind     = "EngineImage"
+	EngineImage         = "engineimage"
+	EngineImagePlural   = "engineimages"
+	EngineImageList     = "EngineImageList"
+	EngineImageFullName = EngineImagePlural + "." + LonghornGroup
 )
+
+func (c *ClientGenerator) LonghornEngineImageCRDDeploy() error {
+	crd := &v1beta1.CustomResourceDefinition{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:   EngineImageFullName,
+			Labels: map[string]string{LonghornLabel: "EngineImage"},
+		},
+
+		Spec: v1beta1.CustomResourceDefinitionSpec{
+			Group:   LonghornGroup,
+			Version: LonghornVersion,
+			Scope:   v1beta1.NamespaceScoped,
+			Names: v1beta1.CustomResourceDefinitionNames{
+				Plural:   EngineImagePlural,
+				Kind:     EngineImageKind,
+				ListKind: EngineImageList,
+				Singular: EngineImage,
+			},
+		},
+	}
+
+	_, err := c.Apiclientset.ApiextensionsV1beta1().CustomResourceDefinitions().Create(crd)
+	if err != nil && k8serrors.IsAlreadyExists(err) {
+		return nil
+	}
+	return err
+}
 
 func (c *ClientGenerator) LonghornVolumeCRDDeploy() error {
 	crd := &v1beta1.CustomResourceDefinition{

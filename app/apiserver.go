@@ -120,6 +120,7 @@ func startAPIServer(c *cli.Context) error {
 	clientGenerator.LonghornReplicaCRDDeploy()
 	clientGenerator.LonghornSettingCRDDeploy()
 	clientGenerator.LonghornVolumeCRDDeploy()
+	clientGenerator.LonghornEngineImageCRDDeploy()
 	clientGenerator.CredentialCRDDeploy()
 	clientGenerator.ArptableCRDDeploy()
 	clientGenerator.VirtualMachineCRDDeploy()
